@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Activity Stream - CTF Arena</title>
+  <meta name="description" content="Real-time administrative feed of online competitors, challenge submissions, hints unlocked, and room completions.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container">
+    <!-- Header -->
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-6); flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
+          <span class="badge badge-green">Live Stream</span>
+          <span class="text-mono text-dim text-xs">POLLING 10s</span>
+        </div>
+        <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-1);">Live Competitor Activity</h1>
+        <p class="text-dim" style="margin: 0;">
+          Inspect real-time heartbeats, active lab engagement, and incoming platform security events.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <span id="countdown-indicator" class="text-mono text-xs text-dim">Next poll in 10s</span>
+        <button id="manual-refresh-btn" class="btn btn-outline btn-sm">Refresh Now</button>
+      </div>
+    </div>
+
+    <!-- Active Now Competitors Table -->
+    <div class="card" style="margin-bottom: var(--space-8);">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h2 style="font-size: var(--text-base); font-family: var(--font-mono); margin: 0; color: #ffffff;">Online Competitors</h2>
+          <span class="text-xs text-dim">Competitors transmitting heartbeats within the last 5 minutes</span>
+        </div>
+        <span id="online-count-badge" class="badge badge-green">0 Online</span>
+      </div>
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Squad</th>
+              <th>Current Lab</th>
+              <th>Current Challenge</th>
+              <th>Last Seen</th>
+              <th>Last Event</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="online-users-tbody">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Checking live connections...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Live Event Audit Feed -->
+    <div class="card" style="margin-bottom: var(--space-8);">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 style="font-size: var(--text-base); font-family: var(--font-mono); margin: 0; color: #ffffff;">Audit Event Feed</h2>
+          <span class="text-xs text-dim">Chronological stream of competitor interactions</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <select id="event-type-filter" class="form-input" style="padding: 0.25rem 0.5rem; font-size: var(--text-xs); width: auto;">
+            <option value="">All Event Types</option>
+            <option value="flag_solved">Flag Solved</option>
+            <option value="flag_attempt_wrong">Wrong Attempt</option>
+            <option value="hint_unlocked">Hint Unlocked</option>
+            <option value="lab_completed">Lab Completed</option>
+            <option value="lab_opened">Lab Opened</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Event</th>
+              <th>Name</th>
+              <th>Squad</th>
+              <th>Lab &amp; Challenge</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="events-feed-tbody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Awaiting event stream...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/live.js"></script>
+</body>
+</html>

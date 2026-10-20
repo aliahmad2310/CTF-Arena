@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competitor Audit Deep-Dive - CTF Arena</title>
+  <meta name="description" content="Individual competitor audit: lab completion cards, challenge attempt breakdown, hint unlocks, and remaining challenges.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container">
+    <!-- Header -->
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-6); flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
+          <a href="/admin/progress.html" class="text-mono text-xs text-dim">&larr; Back to Directory</a>
+          <span class="badge badge-grey">Audit Profile</span>
+        </div>
+        <h1 id="user-display-name" style="font-size: var(--text-3xl); margin-bottom: var(--space-1);">Loading Competitor...</h1>
+        <div id="user-meta-sub" class="text-dim text-sm">Examining forensic solve timeline</div>
+      </div>
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <span id="user-online-badge" class="badge badge-grey">OFFLINE</span>
+      </div>
+    </div>
+
+    <!-- Competitor Summary Metrics -->
+    <div class="grid-4" style="margin-bottom: var(--space-8);">
+      <div class="stat-card">
+        <div class="stat-card-title">Scoreboard Rank</div>
+        <div id="user-rank" class="stat-card-value text-accent" style="color: var(--accent-cyan);">--</div>
+        <div class="stat-card-subtitle">Global individual rank</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Total Points</div>
+        <div id="user-points" class="stat-card-value">--</div>
+        <div class="stat-card-subtitle">Earned score</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Labs Completed</div>
+        <div id="user-labs-completed" class="stat-card-value" style="color: var(--status-green-text);">--</div>
+        <div class="stat-card-subtitle">Finished rooms</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Challenges Remaining</div>
+        <div id="user-challenges-remaining" class="stat-card-value" style="color: var(--status-amber-text);">--</div>
+        <div class="stat-card-subtitle">Unsolved published targets</div>
+      </div>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); margin-bottom: var(--space-8);">
+      <!-- Left Column: Lab Cards & Challenge Breakdown -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+          <h2 style="font-size: var(--text-lg); font-family: var(--font-mono); margin: 0; color: #ffffff;">Lab Progress Breakdown</h2>
+          <span class="text-xs text-dim">Challenge solve audit per lab</span>
+        </div>
+        <div id="labs-cards-container">
+          <div class="card" style="padding: var(--space-6); text-align: center; color: var(--text-dim);">
+            Loading lab progress cards...
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Recent Activity Feed & Remaining Challenges Summary -->
+      <div>
+        <!-- Remaining Unsolved Panel -->
+        <div class="card" style="margin-bottom: var(--space-6);">
+          <div class="card-header">
+            <h3 style="font-size: var(--text-sm); font-family: var(--font-mono); margin: 0; color: #ffffff;">Unfinished Labs Summary</h3>
+          </div>
+          <div class="card-body" id="remaining-panel-body">
+            <div class="text-dim text-xs">Computing remaining targets...</div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="card">
+          <div class="card-header">
+            <h3 style="font-size: var(--text-sm); font-family: var(--font-mono); margin: 0; color: #ffffff;">Audit Activity Stream</h3>
+          </div>
+          <div class="card-body" id="user-activity-feed" style="max-height: 400px; overflow-y: auto;">
+            <div class="text-dim text-xs">Loading activity stream...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/user.js"></script>
+</body>
+</html>

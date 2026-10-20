@@ -1,0 +1,178 @@
+/* ==============================================================================
+   CTF Arena - Page-Specific Layouts & Specialized Views
+   File: frontend/css/pages.css
+   Hardware-inspired Cybersecurity Theme matching the Motherboard Reference
+   Strict Rule: Absolutely zero emoji anywhere in this file.
+   ============================================================================== */
+
+/* ------------------------------------------------------------------------------
+   1. Landing Page Hero & Mission Countdown
+   ------------------------------------------------------------------------------ */
+.hero-section {
+  padding: var(--space-12) 0 var(--space-8);
+  position: relative;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .hero-grid {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+}
+
+.hero-title {
+  font-size: var(--text-4xl);
+  line-height: 1.15;
+  margin-bottom: var(--space-4);
+  text-shadow: 0 0 20px rgba(53, 168, 255, 0.35);
+}
+
+@media (min-width: 1200px) {
+  .hero-title {
+    font-size: var(--text-5xl);
+  }
+}
+
+.hero-subtitle {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 540px;
+  margin-bottom: var(--space-6);
+}
+
+.hero-art-box {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--blue-500);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), var(--glow-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.hero-art-box::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan-400), var(--blue-400), transparent);
+}
+
+/* ------------------------------------------------------------------------------
+   2. Authentication Views (Centered Matte Carbon Shield)
+   ------------------------------------------------------------------------------ */
+.auth-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 160px);
+  padding: var(--space-6) var(--space-4);
+}
+
+.auth-card {
+  max-width: 440px;
+  width: 100%;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--line-normal);
+  border-radius: var(--radius-sm);
+  padding: var(--space-8);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), var(--glow-sm);
+  position: relative;
+}
+
+/* Circuit Traces Extending from Auth Card Corners */
+.auth-card::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blue-400), transparent);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+/* ------------------------------------------------------------------------------
+   3. Interactive Challenge Split View (Markdown Briefing + Terminal Console)
+   ------------------------------------------------------------------------------ */
+.challenge-split-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+@media (min-width: 960px) {
+  .challenge-split-layout {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+}
+
+.briefing-pane {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--line-normal);
+  border-radius: var(--radius-sm);
+  padding: var(--space-6);
+  position: relative;
+}
+
+.terminal-pane {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--blue-500);
+  border-radius: var(--radius-sm);
+  padding: var(--space-6);
+  box-shadow: var(--glow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------------------------------------------------------------------
+   4. Markdown Rendering Content Styles (Briefings & Clues)
+   ------------------------------------------------------------------------------ */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  font-family: var(--font-display);
+  color: #ffffff;
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--line-faint);
+  padding-bottom: var(--space-1);
+}
+
+.markdown-content p {
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: var(--space-4);
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  color: var(--text-secondary);
+  padding-left: var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.markdown-content li {
+  margin-bottom: var(--space-2);
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid var(--blue-400);
+  background-color: var(--bg-input);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
+  font-style: normal;
+}

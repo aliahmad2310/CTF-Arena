@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" fill="none" role="img" aria-label="Cyber Defense Mission Art">
+  <!-- CTF Arena Hero Art: Stylized Cyber Flag over Locked Hardware Chassis -->
+  <!-- Strict Rule: Absolutely zero emoji anywhere in this file. -->
+
+  <defs>
+    <!-- Cyan & Blue Radial Halo -->
+    <radialGradient id="hero-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.35" />
+      <stop offset="50%" stop-color="#1e90ff" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#02060f" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Metallic Box Gradient -->
+    <linearGradient id="chassis-metal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#142442" />
+      <stop offset="50%" stop-color="#0a1428" />
+      <stop offset="100%" stop-color="#050b18" />
+    </linearGradient>
+
+    <!-- Gold Accent Padlock Gradient -->
+    <linearGradient id="lock-gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffd166" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+
+    <!-- Flag Gradient -->
+    <linearGradient id="flag-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e90ff" />
+      <stop offset="60%" stop-color="#00f0ff" />
+      <stop offset="100%" stop-color="#6cc6ff" />
+    </linearGradient>
+
+    <!-- Node Glow Filter -->
+    <filter id="art-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Ambient Glow Bloom -->
+  <circle cx="320" cy="220" r="190" fill="url(#hero-glow)" />
+
+  <!-- Ground Plane Circuit Motherboard Traces -->
+  <g class="ground-circuits" stroke="#35a8ff" stroke-width="1.5" stroke-linecap="round">
+    <!-- Center to Left Traces -->
+    <path d="M 240 330 L 160 330 L 120 370 L 40 370" opacity="0.6" />
+    <circle cx="40" cy="370" r="4" fill="#0a1428" stroke="#35a8ff" stroke-width="1.5" />
+    <circle cx="40" cy="370" r="1.5" fill="#ffffff" filter="url(#art-glow)" />
+
+    <path d="M 230 350 L 180 350 L 150 380 L 90 380" opacity="0.4" />
+    <circle cx="90" cy="380" r="3" fill="#0a1428" stroke="#35a8ff" stroke-width="1.5" />
+
+    <!-- Center to Right Traces -->
+    <path d="M 400 330 L 480 330 L 520 370 L 600 370" opacity="0.6" />
+    <circle cx="600" cy="370" r="4" fill="#0a1428" stroke="#35a8ff" stroke-width="1.5" />
+    <circle cx="600" cy="370" r="1.5" fill="#ffffff" filter="url(#art-glow)" />
+
+    <path d="M 410 350 L 460 350 L 490 380 L 550 380" opacity="0.4" />
+    <circle cx="550" cy="380" r="3" fill="#0a1428" stroke="#35a8ff" stroke-width="1.5" />
+
+    <!-- Vertical Pin Array Indicators -->
+    <circle cx="140" cy="340" r="2" fill="#35a8ff" opacity="0.6" />
+    <circle cx="140" cy="350" r="2" fill="#35a8ff" opacity="0.6" />
+    <circle cx="140" cy="360" r="2" fill="#35a8ff" opacity="0.6" />
+
+    <circle cx="500" cy="340" r="2" fill="#35a8ff" opacity="0.6" />
+    <circle cx="500" cy="350" r="2" fill="#35a8ff" opacity="0.6" />
+    <circle cx="500" cy="360" r="2" fill="#35a8ff" opacity="0.6" />
+  </g>
+
+  <!-- Central Metal Hardware Chassis / Server Safe Box -->
+  <g class="hardware-safe" transform="translate(230, 240)">
+    <!-- Main Box Panel -->
+    <rect x="0" y="0" width="180" height="110" rx="4"
+          fill="url(#chassis-metal)" stroke="#35a8ff" stroke-width="2" filter="url(#art-glow)" />
+
+    <!-- Inner Bevel Highlight -->
+    <rect x="6" y="6" width="168" height="98" rx="2"
+          fill="none" stroke="rgba(53, 168, 255, 0.25)" stroke-width="1" />
+
+    <!-- Corner Hardware Screws/Nodes -->
+    <circle cx="12" cy="12" r="3" fill="#0a1428" stroke="#35a8ff" stroke-width="1" />
+    <circle cx="168" cy="12" r="3" fill="#0a1428" stroke="#35a8ff" stroke-width="1" />
+    <circle cx="12" cy="98" r="3" fill="#0a1428" stroke="#35a8ff" stroke-width="1" />
+    <circle cx="168" cy="98" r="3" fill="#0a1428" stroke="#35a8ff" stroke-width="1" />
+
+    <!-- Horizontal Cooling Vents -->
+    <line x1="26" y1="26" x2="65" y2="26" stroke="#35a8ff" stroke-width="2" stroke-linecap="round" opacity="0.7" />
+    <line x1="26" y1="34" x2="65" y2="34" stroke="#35a8ff" stroke-width="2" stroke-linecap="round" opacity="0.7" />
+    <line x1="26" y1="42" x2="65" y2="42" stroke="#35a8ff" stroke-width="2" stroke-linecap="round" opacity="0.7" />
+
+    <!-- Chassis LED Status Indicators -->
+    <circle cx="150" cy="26" r="2.5" fill="#2ee59d" filter="url(#art-glow)" />
+    <circle cx="150" cy="34" r="2.5" fill="#35a8ff" filter="url(#art-glow)" />
+
+    <!-- Central Lock Motif -->
+    <g transform="translate(74, 38)">
+      <!-- Padlock Shackle -->
+      <path d="M 9 14 L 9 8 C 9 3 23 3 23 8 L 23 14"
+            fill="none" stroke="#6cc6ff" stroke-width="3.5" stroke-linecap="round" />
+      <!-- Padlock Body -->
+      <rect x="2" y="14" width="28" height="24" rx="3"
+            fill="url(#lock-gold)" stroke="#ffd166" stroke-width="1" filter="url(#art-glow)" />
+      <!-- Keyhole -->
+      <circle cx="16" cy="23" r="2.5" fill="#0a1428" />
+      <polygon points="15,24 17,24 18,31 14,31" fill="#0a1428" />
+    </g>
+  </g>
+
+  <!-- The Flagpole and Cyber Flag -->
+  <g class="cyber-flag" transform="translate(315, 30)">
+    <!-- Flagpole Base Node -->
+    <circle cx="5" cy="215" r="7" fill="#0a1428" stroke="#35a8ff" stroke-width="2" />
+    <circle cx="5" cy="215" r="2.5" fill="#ffffff" filter="url(#art-glow)" />
+
+    <!-- Metallic Pole -->
+    <line x1="5" y1="215" x2="5" y2="20" stroke="#6cc6ff" stroke-width="3.5" stroke-linecap="round" />
+    <circle cx="5" cy="18" r="4.5" fill="#00f0ff" filter="url(#art-glow)" />
+
+    <!-- Flag Banner with Digital Angled Notch -->
+    <path d="M 6 22 L 140 22 L 115 56 L 140 90 L 6 90 Z"
+          fill="url(#flag-gradient)" stroke="#ffffff" stroke-width="1.5" filter="url(#art-glow)" />
+
+    <!-- Internal Flag Circuit Accent -->
+    <path d="M 20 40 L 65 40 L 85 60 L 105 60"
+          fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" />
+    <circle cx="105" cy="60" r="3" fill="#ffffff" />
+
+    <!-- Flag Monogram Label -->
+    <text x="24" y="78" font-family="'Orbitron', sans-serif" font-size="16" font-weight="900"
+          letter-spacing="2" fill="#050b18">CTF</text>
+  </g>
+</svg>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CTF Arena - Cyber Defense Training Platform</title>
+  <meta name="description" content="Next-generation Capture The Flag platform modeled after TryHackMe rooms. Attack real-world labs, capture flags, and conquer the live leaderboard.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+
+  <main class="site-main container">
+    <!-- Hero Section -->
+    <section style="text-align: center; padding: var(--space-12) 0 var(--space-8) 0; max-width: 840px; margin: 0 auto;">
+      <h1 style="font-size: var(--text-4xl); line-height: 1.15; margin-bottom: var(--space-4); letter-spacing: -0.03em;">
+        Tactical Cybersecurity Training &amp; <span class="text-green">Live Capture The Flag</span>
+      </h1>
+
+      <p class="text-muted" style="font-size: var(--text-lg); line-height: 1.6; margin-bottom: var(--space-8);">
+        Engage with multi-stage vulnerable labs, exploit realistic targets, submit cryptographic flags, and compete with cybersecurity squads across the globe.
+      </p>
+
+      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-4);">
+        <a href="/labs.html" class="btn btn-lg btn-primary">
+          Enter Active Labs
+        </a>
+        <a href="/leaderboard.html" class="btn btn-lg btn-secondary">
+          View Live Scoreboard
+        </a>
+      </div>
+    </section>
+
+    <!-- CTF Competition Status & Countdown Banner -->
+    <section class="card" style="margin-bottom: var(--space-12); background: linear-gradient(180deg, var(--bg-card), var(--bg-secondary)); border: 1px solid var(--border-medium);">
+      <div class="card-body" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-6); padding: var(--space-6);">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
+            <span id="ctf-status-badge" class="badge badge-green">Competition Active</span>
+            <span id="freeze-badge" class="badge badge-grey hidden">Scoreboard Frozen</span>
+          </div>
+          <h2 id="ctf-title" style="font-size: var(--text-xl); margin: 0;">CTF Arena Championship</h2>
+        </div>
+
+        <!-- Countdown Timer Blocks -->
+        <div style="display: flex; align-items: center; gap: var(--space-3);">
+          <div style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
+            <div id="countdown-days" class="text-mono text-xl font-bold text-green">00</div>
+            <div class="text-dim text-xs text-mono">DAYS</div>
+          </div>
+          <div style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
+            <div id="countdown-hours" class="text-mono text-xl font-bold text-green">00</div>
+            <div class="text-dim text-xs text-mono">HOURS</div>
+          </div>
+          <div style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
+            <div id="countdown-minutes" class="text-mono text-xl font-bold text-green">00</div>
+            <div class="text-dim text-xs text-mono">MIN</div>
+          </div>
+          <div style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
+            <div id="countdown-seconds" class="text-mono text-xl font-bold text-green">00</div>
+            <div class="text-dim text-xs text-mono">SEC</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top 5 Scoreboard Preview -->
+    <section class="card" style="margin-bottom: var(--space-12);">
+      <div class="card-header">
+        <h2 style="font-size: var(--text-base); margin: 0;">Top Squads Leaderboard Preview</h2>
+        <a href="/leaderboard.html" class="text-cyan text-xs text-mono" style="font-weight: 600;">View Full Scoreboard &rarr;</a>
+      </div>
+      <div class="table-container" style="border: none; border-radius: 0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">Rank</th>
+              <th>Squad Name</th>
+              <th>Operatives</th>
+              <th>Solves</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="top-teams-tbody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Loading standings...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Platform Highlights Section -->
+    <section style="margin-bottom: var(--space-12);">
+      <div style="text-align: center; margin-bottom: var(--space-8);">
+        <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-2);">Built for Serious Cyber Operatives</h2>
+        <p class="text-dim">Engineered with modern defense-in-depth protocols and zero client-side flag disclosure.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-body">
+            <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Interactive Labs</h3>
+            <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin: 0;">
+              Modeled after TryHackMe rooms. Each lab contains progressive vulnerability stages with instant flag verification.
+            </p>
+          </div>
+        </div>
+
+        <div class="card-body card">
+          <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Squad Collaboration</h3>
+          <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin: 0;">
+            Assemble squads of up to 4 operatives. Rotate recruitment invite codes and strategize across challenge categories.
+          </p>
+        </div>
+
+        <div class="card-body card">
+          <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Live Administrative Monitor</h3>
+          <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin: 0;">
+            Comprehensive telemetry console with real-time heartbeat tracking, stuck user heuristics, and matrix heatmaps.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/pages/index.js"></script>
+</body>
+</html>

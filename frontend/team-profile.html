@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Profile - CTF Arena</title>
+  <meta name="description" content="View team roster, solve statistics, and leaderboard standing on CTF Arena.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+
+  <main class="site-main container">
+    <!-- Team Overview Card -->
+    <div class="card" style="margin-bottom: var(--space-6);">
+      <div class="card-body" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4);">
+        <div>
+          <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-1);">
+            <h1 id="public-team-name" style="font-size: var(--text-2xl); margin: 0;">Loading...</h1>
+            <span id="public-team-capacity" class="badge badge-grey">Team</span>
+          </div>
+          <p class="text-dim" style="font-size: var(--text-xs); margin: 0;">
+            Created on <span id="public-team-created">--</span>
+          </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: var(--space-6);">
+          <div>
+            <div class="text-dim" style="font-size: var(--text-xs); font-family: var(--font-mono);">TEAM SCORE</div>
+            <div id="public-team-score" class="text-green text-mono" style="font-size: var(--text-2xl); font-weight: 700;">0</div>
+          </div>
+          <div>
+            <div class="text-dim" style="font-size: var(--text-xs); font-family: var(--font-mono);">SCOREBOARD RANK</div>
+            <div id="public-team-rank" class="text-cyan text-mono" style="font-size: var(--text-2xl); font-weight: 700;">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Roster Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 style="font-size: var(--text-base); margin: 0;">Squad Members</h2>
+        <span id="public-roster-count" class="badge badge-green">0 Members</span>
+      </div>
+      <div class="table-container" style="border: none; border-radius: 0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Operative</th>
+              <th>Role</th>
+              <th>Solves</th>
+              <th>Score Contributed</th>
+              <th>Last Active</th>
+            </tr>
+          </thead>
+          <tbody id="public-roster-tbody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Loading squad members...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/pages/team-profile.js"></script>
+</body>
+</html>

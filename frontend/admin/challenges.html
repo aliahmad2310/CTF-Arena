@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Challenges - Admin Console</title>
+  <meta name="description" content="Author challenges, set point weights, and configure cryptographic flags on CTF Arena.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-6);">
+      <div>
+        <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-1);">Challenge Authoring &amp; Flags</h1>
+        <p class="text-dim" style="margin: 0; font-size: var(--text-sm);">
+          All flags are automatically salted and hashed with server pepper on save. Plaintext flags are never returned over the API.
+        </p>
+      </div>
+
+      <button type="button" id="create-challenge-btn" class="btn btn-primary">
+        + Create Challenge
+      </button>
+    </div>
+
+    <!-- Challenges Table Card -->
+    <div class="card">
+      <div class="table-container" style="border: none; border-radius: 0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Lab</th>
+              <th>Category</th>
+              <th>Points</th>
+              <th>Difficulty</th>
+              <th>Status</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="challenges-tbody">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Loading challenges catalog...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/challenges.js"></script>
+</body>
+</html>

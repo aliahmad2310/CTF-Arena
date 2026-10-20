@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mission Overview &amp; Telemetry - CTF Arena</title>
+  <meta name="description" content="Platform-wide administrative telemetry, live competitor distributions, completion charts, and alerts.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container">
+    <!-- Header -->
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-6); flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
+          <span class="badge badge-green">Live Telemetry</span>
+          <span class="text-mono text-dim text-xs">AUTO-REFRESH 30s</span>
+        </div>
+        <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-1);">Operations Telemetry</h1>
+        <p class="text-dim" style="margin: 0;">
+          Real-time competitor engagement, completion distributions, and automated anomaly warnings.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button id="refresh-btn" class="btn btn-outline btn-sm">Refresh Metrics</button>
+        <a href="/admin/live.html" class="btn btn-primary btn-sm">Open Live Feed</a>
+      </div>
+    </div>
+
+    <!-- Telemetry Stat Cards -->
+    <div class="grid-4" style="margin-bottom: var(--space-6);">
+      <div class="stat-card">
+        <div class="stat-card-title">Registered Competitors</div>
+        <div id="stat-total-users" class="stat-card-value">--</div>
+        <div class="stat-card-subtitle">Active accounts participating</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Active Now</div>
+        <div id="stat-active-now" class="stat-card-value text-accent" style="color: var(--accent-green);">--</div>
+        <div class="stat-card-subtitle">Heartbeat in past 5 minutes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Engaged in Lab</div>
+        <div id="stat-users-in-lab" class="stat-card-value" style="color: var(--accent-cyan);">--</div>
+        <div class="stat-card-subtitle">Actively working on a challenge</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Completed Today</div>
+        <div id="stat-completed-today" class="stat-card-value">--</div>
+        <div class="stat-card-subtitle">100% lab completions logged</div>
+      </div>
+    </div>
+
+    <!-- Secondary Stat Bar -->
+    <div class="grid-3" style="margin-bottom: var(--space-8);">
+      <div class="stat-card">
+        <div class="stat-card-title">Platform Avg Completion</div>
+        <div id="stat-avg-completion" class="stat-card-value">--%</div>
+        <div class="stat-card-subtitle">Mean lab progress percentage</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Total Submissions</div>
+        <div id="stat-total-submissions" class="stat-card-value">--</div>
+        <div class="stat-card-subtitle">Flag attempts processed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Attempt Failure Rate</div>
+        <div id="stat-failure-rate" class="stat-card-value" style="color: var(--status-amber-text);">--%</div>
+        <div class="stat-card-subtitle">Ratio of incorrect flag submissions</div>
+      </div>
+    </div>
+
+    <!-- Telemetry Charts Section -->
+    <div class="grid-3" style="margin-bottom: var(--space-8);">
+      <!-- Lab Status Distribution Chart -->
+      <div class="card">
+        <div class="card-header">
+          <h2 style="font-size: var(--text-base); font-family: var(--font-mono); margin: 0; color: #ffffff;">Status Distribution</h2>
+        </div>
+        <div class="card-body" style="height: 260px; display: flex; align-items: center; justify-content: center;">
+          <canvas id="statusDistributionChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Completions Timeline Chart -->
+      <div class="card" style="grid-column: span 2;">
+        <div class="card-header">
+          <h2 style="font-size: var(--text-base); font-family: var(--font-mono); margin: 0; color: #ffffff;">Lab Completions (Last 7 Days)</h2>
+        </div>
+        <div class="card-body" style="height: 260px;">
+          <canvas id="completionsDailyChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completion Rate per Lab Chart -->
+    <div class="card" style="margin-bottom: var(--space-8);">
+      <div class="card-header">
+        <h2 style="font-size: var(--text-base); font-family: var(--font-mono); margin: 0; color: #ffffff;">Completion Rate by Lab</h2>
+      </div>
+      <div class="card-body" style="height: 280px;">
+        <canvas id="labCompletionRatesChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Automated System Alerts Panel -->
+    <div class="card" style="margin-bottom: var(--space-8);">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h2 style="font-size: var(--text-base); font-family: var(--font-mono); margin: 0; color: #ffffff;">Heuristic Alerts Panel</h2>
+          <span class="text-xs text-dim">Automated alerts for stuck competitors, inactive users, and brute-force spikes</span>
+        </div>
+        <span id="alerts-count-badge" class="badge badge-grey">0 Alerts</span>
+      </div>
+      <div class="card-body" id="alerts-container">
+        <div class="skeleton" style="height: 50px; margin-bottom: var(--space-2);"></div>
+        <div class="skeleton" style="height: 50px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/monitor.js"></script>
+</body>
+</html>

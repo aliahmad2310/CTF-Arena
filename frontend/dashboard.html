@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - CTF Arena</title>
+  <meta name="description" content="Personal mission command center tracking your solve progress, active labs, and competition standing.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+
+  <main class="site-main container">
+    <!-- Welcome Header -->
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-8);">
+      <div>
+        <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-2);">
+          Welcome back, <span id="dash-display-name" class="text-green">Operative</span>
+        </h1>
+        <p class="text-dim" style="margin: 0; font-size: var(--text-sm);">
+          Active training session in progress. Review current lab engagements below.
+        </p>
+      </div>
+
+      <div>
+        <a href="/labs.html" class="btn btn-primary">
+          Explore Labs Catalog
+        </a>
+      </div>
+    </div>
+
+    <!-- Stat Metrics Grid -->
+    <div class="grid-4" style="margin-bottom: var(--space-8);">
+      <!-- Total Score Card -->
+      <div class="stat-card">
+        <div class="stat-card-title">Net Score</div>
+        <div id="stat-score" class="stat-card-value text-green">0</div>
+        <div id="stat-solves-sub" class="stat-card-subtitle">0 challenges solved</div>
+      </div>
+
+      <!-- Rank Card -->
+      <div class="stat-card">
+        <div class="stat-card-title">Global Standing</div>
+        <div id="stat-rank" class="stat-card-value text-cyan">--</div>
+        <div class="stat-card-subtitle">Official Scoreboard Rank</div>
+      </div>
+
+      <!-- Labs Completed Card -->
+      <div class="stat-card">
+        <div class="stat-card-title">Labs Completed</div>
+        <div id="stat-labs-completed" class="stat-card-value">0 / 0</div>
+        <div id="stat-labs-in-progress" class="stat-card-subtitle">0 currently in progress</div>
+      </div>
+
+      <!-- Squad Status Card -->
+      <div class="stat-card">
+        <div class="stat-card-title">Squad Standing</div>
+        <div id="stat-team-name" class="stat-card-value" style="font-size: var(--text-2xl);">None</div>
+        <div id="stat-team-rank-sub" class="stat-card-subtitle">Solo Operative</div>
+      </div>
+    </div>
+
+    <!-- Active Labs (Resume Panel) -->
+    <div style="margin-bottom: var(--space-8);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+        <h2 style="font-size: var(--text-xl); margin: 0;">In-Progress Labs</h2>
+        <span id="active-labs-count" class="badge badge-amber">0 Active</span>
+      </div>
+
+      <div id="active-labs-container" class="grid-2">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Recent Activity Timeline Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 style="font-size: var(--text-base); margin: 0;">Recent Tactical Activity</h2>
+        <span class="badge badge-grey">Audit Stream</span>
+      </div>
+      <div class="table-container" style="border: none; border-radius: 0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Challenge / Target</th>
+              <th>Lab</th>
+              <th>Outcome</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="activity-tbody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Loading activity events...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/pages/dashboard.js"></script>
+</body>
+</html>

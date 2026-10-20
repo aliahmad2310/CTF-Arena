@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="48" viewBox="0 0 160 48" fill="none" role="img" aria-label="CTF Arena Logo">
+  <!-- CTF Arena Brand Mark: Glowing Shield Emblem + CTF Display Lettering -->
+  <!-- Strict Rule: Absolutely zero emoji anywhere in this file. -->
+  <defs>
+    <!-- Electric Blue Shield Glow Filter -->
+    <filter id="shield-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Shield Face Gradient -->
+    <linearGradient id="shield-metal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e1c38" />
+      <stop offset="50%" stop-color="#0a1428" />
+      <stop offset="100%" stop-color="#050b18" />
+    </linearGradient>
+
+    <!-- Neon Stroke Gradient -->
+    <linearGradient id="neon-blue" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6cc6ff" />
+      <stop offset="60%" stop-color="#1e90ff" />
+      <stop offset="100%" stop-color="#00f0ff" />
+    </linearGradient>
+  </defs>
+
+  <!-- Group 1: The Shield Emblem -->
+  <g transform="translate(6, 4)">
+    <!-- Shield Background Solid Fill -->
+    <path d="M 18 2 L 32 7 L 32 23 C 32 31 25 37 18 40 C 11 37 4 31 4 23 L 4 7 Z"
+          fill="url(#shield-metal)" />
+
+    <!-- Outer Shield Electric Glow Stroke -->
+    <path d="M 18 2 L 32 7 L 32 23 C 32 31 25 37 18 40 C 11 37 4 31 4 23 L 4 7 Z"
+          stroke="url(#neon-blue)" stroke-width="2" stroke-linejoin="round"
+          filter="url(#shield-glow)" />
+
+    <!-- Inner Shield Circuit Track -->
+    <path d="M 18 7 L 27 10 L 27 22 C 27 27 22 32 18 34 C 14 32 9 27 9 22 L 9 10 Z"
+          stroke="rgba(53, 168, 255, 0.45)" stroke-width="1" stroke-dasharray="3 2" />
+
+    <!-- Central Solder Node Pad -->
+    <circle cx="18" cy="20" r="3.5" fill="#0a1428" stroke="#35a8ff" stroke-width="1.5" />
+    <circle cx="18" cy="20" r="1.5" fill="#ffffff" />
+
+    <!-- Trace Lines emitting from Node -->
+    <line x1="18" y1="12" x2="18" y2="16.5" stroke="#35a8ff" stroke-width="1.2" />
+    <line x1="18" y1="23.5" x2="18" y2="28" stroke="#35a8ff" stroke-width="1.2" />
+  </g>
+
+  <!-- Group 2: "CTF" Display Brand Text -->
+  <g transform="translate(48, 10)">
+    <!-- CTF Monogram -->
+    <text x="0" y="24" font-family="'Orbitron', sans-serif" font-size="22" font-weight="800"
+          letter-spacing="2" fill="#ffffff" filter="url(#shield-glow)">CTF</text>
+
+    <!-- ARENA Sub-label with Cyan Accent -->
+    <text x="56" y="24" font-family="'Orbitron', sans-serif" font-size="22" font-weight="700"
+          letter-spacing="2" fill="#35a8ff">ARENA</text>
+
+    <!-- Sub-tag Hardware Label -->
+    <text x="2" y="33" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="600"
+          letter-spacing="1.5" fill="#6b82a3">CYBER DEFENSE OS</text>
+  </g>
+</svg>

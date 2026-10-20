@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab Cohort Telemetry - CTF Arena</title>
+  <meta name="description" content="In-depth lab performance telemetry: Completed, In Progress, and Not Started cohorts, difficulty funnels, and hardest challenges.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container">
+    <!-- Header -->
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-6); flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
+          <a href="/admin/monitor.html" class="text-mono text-xs text-dim">&larr; Back to Telemetry</a>
+          <span id="lab-diff-badge" class="badge badge-grey">EASY</span>
+        </div>
+        <h1 id="lab-title-heading" style="font-size: var(--text-3xl); margin-bottom: var(--space-1);">Loading Lab Metrics...</h1>
+        <div id="lab-meta-sub" class="text-dim text-sm">Evaluating cohort performance</div>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a id="public-lab-link" href="#" class="btn btn-outline btn-sm" target="_blank">View Lab in Arena</a>
+      </div>
+    </div>
+
+    <!-- Cohort Stat Summary -->
+    <div class="grid-4" style="margin-bottom: var(--space-8);">
+      <div class="stat-card">
+        <div class="stat-card-title">Completion Rate</div>
+        <div id="lab-completion-rate" class="stat-card-value text-accent" style="color: var(--accent-green);">--%</div>
+        <div class="stat-card-subtitle">Competitors who finished 100%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Avg Finish Duration</div>
+        <div id="lab-avg-time" class="stat-card-value">--</div>
+        <div class="stat-card-subtitle">Mean time to full completion</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Active Solvers</div>
+        <div id="lab-in-progress-count" class="stat-card-value" style="color: var(--status-amber-text);">--</div>
+        <div class="stat-card-subtitle">Currently in progress</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Total Points</div>
+        <div id="lab-total-points" class="stat-card-value">--</div>
+        <div class="stat-card-subtitle">Combined challenge points</div>
+      </div>
+    </div>
+
+    <!-- Hardest Challenges Table -->
+    <div class="card" style="margin-bottom: var(--space-8);">
+      <div class="card-header">
+        <h2 style="font-size: var(--text-base); font-family: var(--font-mono); margin: 0; color: #ffffff;">Hardest Challenges in Lab</h2>
+        <span class="text-xs text-dim">Sorted by lowest solve percentage and highest incorrect flag attempts</span>
+      </div>
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Challenge</th>
+              <th>Category</th>
+              <th>Points</th>
+              <th>Solve Rate</th>
+              <th>Solves</th>
+              <th>Wrong Attempts</th>
+            </tr>
+          </thead>
+          <tbody id="hardest-challenges-tbody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Calculating challenge difficulty metrics...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Three Cohorts Tabs -->
+    <div class="card" style="margin-bottom: var(--space-8);">
+      <div class="card-header" style="display: flex; gap: 1rem; border-bottom: 1px solid var(--border-subtle); padding: 0 var(--space-4);">
+        <button id="tab-completed" class="btn btn-sm btn-outline" style="border-radius: 0; border: none; border-bottom: 2px solid var(--accent-green); color: #ffffff; padding: var(--space-3) var(--space-2);">
+          Completed Cohort (<span id="count-completed">0</span>)
+        </button>
+        <button id="tab-in-progress" class="btn btn-sm btn-outline" style="border-radius: 0; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); padding: var(--space-3) var(--space-2);">
+          In Progress (<span id="count-in-progress">0</span>)
+        </button>
+        <button id="tab-not-started" class="btn btn-sm btn-outline" style="border-radius: 0; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); padding: var(--space-3) var(--space-2);">
+          Not Started (<span id="count-not-started">0</span>)
+        </button>
+      </div>
+
+      <!-- Cohort Table Container -->
+      <div class="table-container">
+        <table class="table">
+          <thead id="cohort-thead">
+            <tr>
+              <th>Name</th>
+              <th>Squad</th>
+              <th>Solved Ratio</th>
+              <th>Completed At</th>
+              <th>Duration</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="cohort-tbody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Loading cohort list...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/lab.js"></script>
+</body>
+</html>

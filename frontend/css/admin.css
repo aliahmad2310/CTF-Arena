@@ -1,0 +1,267 @@
+/* ==============================================================================
+   CTF Arena - Admin Operations Center & Telemetry Theme Stylesheet
+   File: frontend/css/admin.css
+   Hardware-inspired Cybersecurity Theme matching the Motherboard Reference
+   Strict Rule: Absolutely zero emoji anywhere in this file.
+   ============================================================================== */
+
+/* Ensure admin pages activate the sparser, calmer circuit pattern */
+body {
+  background-color: var(--bg-base);
+}
+
+/* ------------------------------------------------------------------------------
+   1. Admin Subnavigation Bar
+   ------------------------------------------------------------------------------ */
+.admin-nav-bar {
+  background-color: rgba(10, 20, 40, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line-normal);
+  margin-bottom: var(--space-6);
+  padding: 0 var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow-x: auto;
+  position: relative;
+}
+
+.admin-nav-bar::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan-400), transparent);
+  opacity: 0.6;
+}
+
+.admin-nav-item {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  padding: var(--space-3) var(--space-4);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.admin-nav-item:hover {
+  color: #ffffff;
+  text-decoration: none;
+  border-bottom-color: var(--blue-400);
+  background-color: rgba(53, 168, 255, 0.06);
+}
+
+.admin-nav-item.active {
+  color: var(--cyan-400);
+  border-bottom-color: var(--cyan-400);
+  background-color: rgba(0, 240, 255, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 240, 255, 0.25);
+}
+
+/* ------------------------------------------------------------------------------
+   2. Telemetry Stat Cards
+   ------------------------------------------------------------------------------ */
+.stat-card {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--line-normal);
+  border-radius: var(--radius-sm);
+  padding: var(--space-5);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blue-400), transparent);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--blue-400);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), var(--glow-sm);
+}
+
+.stat-card-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.stat-card-value {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+  margin-bottom: var(--space-2);
+  text-shadow: 0 0 10px var(--blue-glow);
+}
+
+.stat-card-subtitle {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------------------
+   3. Heuristic Alert Cards
+   ------------------------------------------------------------------------------ */
+.alert-card {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--line-normal);
+  border-left: 4px solid var(--status-amber);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.alert-card.alert-danger {
+  border-left-color: var(--status-red);
+}
+
+.alert-card-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: var(--space-1);
+}
+
+.alert-card-desc {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------------------
+   4. Progress Matrix Heatmap Table & Solder Node Cells
+   ------------------------------------------------------------------------------ */
+.matrix-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line-normal);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-panel);
+  margin-top: var(--space-4);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.matrix-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: var(--text-xs);
+}
+
+.matrix-table th {
+  background-color: var(--bg-panel-raised);
+  font-family: var(--font-mono);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  text-align: center;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.matrix-table th.sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: var(--bg-panel-raised);
+  text-align: left;
+}
+
+.matrix-table td.sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 9;
+  background-color: var(--bg-panel);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-3);
+  border-right: 1px solid var(--line-normal);
+  white-space: nowrap;
+}
+
+.matrix-cell {
+  text-align: center;
+  padding: var(--space-2);
+  min-width: 90px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  position: relative;
+}
+
+.matrix-cell:hover {
+  transform: scale(1.04);
+  z-index: 5;
+}
+
+.matrix-cell-not-started {
+  background-color: var(--status-grey-bg);
+  color: var(--status-grey-text);
+  border: 1px solid var(--status-grey-border);
+}
+
+.matrix-cell-in-progress {
+  background-color: var(--status-amber-bg);
+  color: var(--status-amber-text);
+  border: 1px solid var(--status-amber-border);
+}
+
+.matrix-cell-completed {
+  background-color: var(--status-green-bg);
+  color: var(--status-green-text);
+  border: 1px solid var(--status-green-border);
+  box-shadow: inset 0 0 8px rgba(46, 229, 157, 0.15);
+}
+
+/* Explicit Matrix Legend (Never relying on color alone) */
+.matrix-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.legend-box {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+}

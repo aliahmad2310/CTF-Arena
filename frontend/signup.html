@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Competitor Account - CTF Arena</title>
+  <meta name="description" content="Register an individual competitor account on CTF Arena to start solving cybersecurity labs and challenges.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+
+  <main class="site-main container" style="max-width: 480px;">
+    <div class="card">
+      <div class="card-header">
+        <h1 style="font-size: var(--text-xl); margin: 0;">Competitor Registration</h1>
+        <span class="badge badge-green">Open Access</span>
+      </div>
+      <div class="card-body">
+        <p class="text-dim" style="font-size: var(--text-xs); margin-bottom: var(--space-4);">
+          Sign up to join competitions, track lab progress, and submit challenge flags.
+        </p>
+
+        <form id="signup-form">
+          <div class="form-group">
+            <label class="form-label" for="username">Username</label>
+            <input type="text" id="username" class="form-input form-input-mono" placeholder="hacker_one" required pattern="^[a-zA-Z0-9_-]{3,20}$" title="3 to 20 characters: alphanumeric, hyphens, or underscores">
+            <div class="form-helper">3-20 characters: letters, numbers, underscores, dashes.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="display-name">Display Name</label>
+            <input type="text" id="display-name" class="form-input" placeholder="Operator Alex" required minlength="2" maxlength="50">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <input type="email" id="email" class="form-input" placeholder="operator@domain.com" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" id="password" class="form-input" placeholder="••••••••••••" required minlength="8">
+            <div class="form-helper">Minimum 8 characters.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="confirm-password">Confirm Password</label>
+            <input type="password" id="confirm-password" class="form-input" placeholder="••••••••••••" required minlength="8">
+          </div>
+
+          <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; margin-top: var(--space-2);">
+            Initialize Account
+          </button>
+        </form>
+      </div>
+      <div class="card-footer" style="text-align: center; font-size: var(--text-xs);">
+        Already registered? <a href="/login.html">Sign In Here</a>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/pages/signup.js"></script>
+</body>
+</html>

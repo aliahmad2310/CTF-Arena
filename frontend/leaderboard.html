@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Scoreboard - CTF Arena</title>
+  <meta name="description" content="Live real-time leaderboard rankings, score timeline progressions, and team standings on CTF Arena.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/pages.css">
+
+  <!-- Chart.js for Score Timeline Progression -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+
+  <main class="site-main container">
+    <!-- Header -->
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-6);">
+      <div>
+        <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-1);">
+          <h1 style="font-size: var(--text-3xl); margin: 0;">Global Scoreboard</h1>
+          <span class="badge badge-green">Live Feed</span>
+        </div>
+        <p id="leaderboard-subtitle" class="text-dim" style="margin: 0; font-size: var(--text-sm);">
+          Live rankings update automatically. Earliest timestamp breaks score ties.
+        </p>
+      </div>
+
+      <!-- Search Input -->
+      <div style="min-width: 240px;">
+        <input type="text" id="leaderboard-search" class="form-input form-input-mono" placeholder="Search team or name...">
+      </div>
+    </div>
+
+    <!-- Timeline Chart Section -->
+    <div class="card" style="margin-bottom: var(--space-6);">
+      <div class="card-header">
+        <h2 style="font-size: var(--text-base); margin: 0;">Top Squad Score Timeline</h2>
+        <span class="text-dim text-mono text-xs">Cumulative Progression</span>
+      </div>
+      <div class="card-body" style="height: 260px; position: relative;">
+        <canvas id="timeline-chart"></canvas>
+        <div id="timeline-empty" style="display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-dim); font-family: var(--font-mono); font-size: var(--text-sm); text-align: center; padding: 2rem;">
+          <span style="color: var(--text-secondary); font-weight: 600;">No timeline progression recorded yet</span>
+          <span class="text-xs" style="color: var(--text-dim);">Solves and points will plot dynamically as teams submit flags.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Tabs & Table Card -->
+    <div class="card">
+      <div class="card-header" style="padding: 0; background-color: var(--bg-surface); display: flex;">
+        <button type="button" id="tab-teams" class="btn" style="flex: 1; border-radius: 0; background: var(--bg-card); color: var(--accent-green); border-bottom: 2px solid var(--accent-green);">
+          Teams Ranking
+        </button>
+        <button type="button" id="tab-users" class="btn" style="flex: 1; border-radius: 0; background: var(--bg-surface); color: var(--text-muted); border-bottom: 2px solid transparent;">
+          Individual Competitors
+        </button>
+      </div>
+
+      <div class="table-container" style="border: none; border-radius: 0;">
+        <table class="data-table">
+          <thead id="leaderboard-thead">
+            <tr>
+              <th style="width: 80px;">Rank</th>
+              <th>Team</th>
+              <th>Members</th>
+              <th>Solves</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-tbody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-dim); padding: var(--space-8);">
+                Loading live standings...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/pages/leaderboard.js"></script>
+</body>
+</html>

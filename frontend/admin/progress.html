@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competitor Progress Directory - CTF Arena</title>
+  <meta name="description" content="Detailed administrative directory of competitor lab completion rates, remaining labs, online status, and CSV export.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container">
+    <!-- Header -->
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-6); flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
+          <span class="badge badge-green">Administrative Directory</span>
+          <span class="text-mono text-dim text-xs">ALL COMPETITORS</span>
+        </div>
+        <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-1);">Competitor Progress Directory</h1>
+        <p class="text-dim" style="margin: 0;">
+          Inspect lab completion funnels, remaining challenges, points, and real-time activity for every competitor.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button id="export-csv-btn" class="btn btn-outline btn-sm">Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Filters & Search Toolbar -->
+    <div class="card" style="margin-bottom: var(--space-6);">
+      <div class="card-body" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+        <div style="flex: 2; min-width: 220px;">
+          <input type="text" id="search-input" class="form-input" placeholder="Search by username or display name...">
+        </div>
+        <div style="flex: 1; min-width: 140px;">
+          <select id="status-filter" class="form-input">
+            <option value="">All Statuses</option>
+            <option value="completed">All Completed</option>
+            <option value="in_progress">In Progress</option>
+            <option value="not_started">Not Started</option>
+          </select>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" id="online-filter">
+          <label for="online-filter" style="margin: 0; font-size: var(--text-xs); color: #ffffff; cursor: pointer;">
+            Online Only
+          </label>
+        </div>
+        <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+          <button id="apply-filters-btn" class="btn btn-primary btn-sm">Apply</button>
+          <button id="reset-filters-btn" class="btn btn-secondary btn-sm">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Directory Table -->
+    <div class="card" style="margin-bottom: var(--space-8);">
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Squad</th>
+              <th>Status</th>
+              <th>Completed</th>
+              <th>In Progress</th>
+              <th>Not Started</th>
+              <th>Overall Progress</th>
+              <th>Points</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="progress-tbody">
+            <tr>
+              <td colspan="9" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Loading competitor records...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Toolbar -->
+      <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="pagination-info" class="text-mono text-xs text-dim">Showing 0 of 0 competitors</span>
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="prev-page-btn" class="btn btn-secondary btn-xs" disabled>Previous</button>
+          <button id="next-page-btn" class="btn btn-secondary btn-xs" disabled>Next</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/progress.js"></script>
+</body>
+</html>

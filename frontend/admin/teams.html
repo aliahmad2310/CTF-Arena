@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Teams - Admin Console</title>
+  <meta name="description" content="Audit competition squads, reset scores, or disband teams on CTF Arena.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-6);">
+      <div>
+        <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-1);">Squads &amp; Team Management</h1>
+        <p class="text-dim" style="margin: 0; font-size: var(--text-sm);">
+          Review active squads, create teams, inspect recruitment codes, reset scores, or disband squads.
+        </p>
+      </div>
+      <div>
+        <button type="button" id="create-team-btn" class="btn btn-primary btn-sm">
+          Create New Squad
+        </button>
+      </div>
+    </div>
+
+    <!-- Teams Table Card -->
+    <div class="card">
+      <div class="table-container" style="border: none; border-radius: 0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Team Name</th>
+              <th>Captain</th>
+              <th>Invite Code</th>
+              <th>Created</th>
+              <th style="text-align: right;">Administrative Actions</th>
+            </tr>
+          </thead>
+          <tbody id="teams-tbody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Loading squads...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/teams.js"></script>
+</body>
+</html>

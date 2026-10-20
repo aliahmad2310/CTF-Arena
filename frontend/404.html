@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - Target Not Found - CTF Arena</title>
+  <meta name="description" content="The requested challenge, lab, or administrative resource does not exist.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+
+  <main class="site-main container" style="display: flex; align-items: center; justify-content: center; min-height: 60vh;">
+    <div class="card" style="max-width: 500px; width: 100%; text-align: center; padding: var(--space-8);">
+      <div style="margin-bottom: var(--space-4);">
+        <span class="badge badge-red" style="font-size: var(--text-sm);">HTTP 404: TARGET NOT FOUND</span>
+      </div>
+      <h1 style="font-size: var(--text-4xl); margin-bottom: var(--space-2); color: #ffffff; font-family: var(--font-mono);">
+        404
+      </h1>
+      <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin-bottom: var(--space-6);">
+        The coordinates you entered do not correspond to an active cybersecurity lab, challenge artifact, or telemetry route.
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="/labs.html" class="btn btn-primary btn-sm">Explore Labs</a>
+        <a href="/index.html" class="btn btn-secondary btn-sm">Return Home</a>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module">
+    import { initLayout } from "/js/layout.js";
+    initLayout();
+  </script>
+</body>
+</html>

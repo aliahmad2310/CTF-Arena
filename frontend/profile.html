@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competitor Profile - CTF Arena</title>
+  <meta name="description" content="View competitor stats, solved challenges, and leaderboard ranking on CTF Arena.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+
+  <main class="site-main container">
+    <!-- Profile Header Card -->
+    <div class="card" style="margin-bottom: var(--space-6);">
+      <div class="card-body" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4);">
+        <div style="display: flex; align-items: center; gap: var(--space-4);">
+          <div id="profile-avatar" style="width: 64px; height: 64px; border-radius: var(--radius-md); background: var(--bg-surface); border: 1px solid var(--border-medium); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: var(--text-2xl); color: var(--accent-green);">
+            --
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1);">
+              <h1 id="profile-username" style="font-size: var(--text-2xl); margin: 0;">Loading...</h1>
+              <span id="profile-role-badge" class="badge badge-grey">User</span>
+            </div>
+            <div id="profile-display-name" class="text-dim" style="font-size: var(--text-sm);">--</div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: var(--space-6);">
+          <div>
+            <div class="text-dim" style="font-size: var(--text-xs); font-family: var(--font-mono);">SCORE</div>
+            <div id="profile-score" class="text-green text-mono" style="font-size: var(--text-2xl); font-weight: 700;">0</div>
+          </div>
+          <div>
+            <div class="text-dim" style="font-size: var(--text-xs); font-family: var(--font-mono);">GLOBAL RANK</div>
+            <div id="profile-rank" class="text-cyan text-mono" style="font-size: var(--text-2xl); font-weight: 700;">--</div>
+          </div>
+          <div>
+            <div class="text-dim" style="font-size: var(--text-xs); font-family: var(--font-mono);">TEAM</div>
+            <div id="profile-team" style="font-size: var(--text-base); font-weight: 600;">None</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Solves History Section -->
+    <div class="card">
+      <div class="card-header">
+        <h2 style="font-size: var(--text-base); margin: 0;">Verified Challenge Solves</h2>
+        <span id="solves-count-badge" class="badge badge-grey">0 Solves</span>
+      </div>
+      <div class="table-container" style="border: none; border-radius: 0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Challenge</th>
+              <th>Category</th>
+              <th>Lab</th>
+              <th>Points Awarded</th>
+              <th>First Blood</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="solves-tbody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Loading solve records...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/pages/profile.js"></script>
+</body>
+</html>

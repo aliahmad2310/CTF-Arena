@@ -1,0 +1,168 @@
+/* ==============================================================================
+   CTF Arena - Design System Tokens & Custom Properties
+   File: frontend/css/variables.css
+   Hardware-inspired Cybersecurity Theme matching the Motherboard Reference
+   Strict Rule: Absolutely zero emoji anywhere in this file.
+   ============================================================================== */
+
+:root {
+  /* ----------------------------------------------------------------------------
+     1. Core Dark Navy & Carbon Background Hierarchy
+     ---------------------------------------------------------------------------- */
+  --bg-deep: #02060f;            /* Deepest navy edge / vignette limit */
+  --bg-base: #050b18;            /* Canvas background */
+  --bg-panel: #0a1428;           /* Matte carbon / brushed metal panel */
+  --bg-panel-raised: #0e1c38;    /* Elevated surface, active card, modal */
+  --bg-input: #07101f;           /* Terminal inputs and code blocks */
+  --bg-overlay: rgba(2, 6, 15, 0.88); /* Modal backdrop & mobile nav */
+
+  /* Backward compatibility aliases */
+  --bg-primary: var(--bg-base);
+  --bg-secondary: var(--bg-panel);
+  --bg-tertiary: var(--bg-panel-raised);
+  --bg-surface: var(--bg-panel-raised);
+  --bg-card: var(--bg-panel);
+  --bg-glass: rgba(10, 20, 40, 0.82);
+
+  /* ----------------------------------------------------------------------------
+     2. Electric Neon Blue Primary Accent Scale
+     ---------------------------------------------------------------------------- */
+  --blue-300: #6cc6ff;           /* Crisp highlight, bright circuit pin core */
+  --blue-400: #35a8ff;           /* Primary interactive border, trace lines */
+  --blue-500: #1e90ff;           /* Solid brand core, buttons, shield icon */
+  --blue-600: #1470d6;           /* Active button state, deep trace line */
+  --blue-glow: rgba(30, 144, 255, 0.55);
+  --blue-glow-intense: rgba(53, 168, 255, 0.85);
+
+  /* Secondary Accent (Cyan) - Used sparingly for high-priority signals */
+  --cyan-400: #22e0ff;
+  --cyan-glow: rgba(34, 224, 255, 0.5);
+
+  /* Backward compatibility accent aliases */
+  --accent-blue: var(--blue-500);
+  --accent-cyan: var(--cyan-400);
+  --accent-cyan-dim: var(--blue-400);
+  --accent-cyan-glow: var(--cyan-glow);
+  --accent-green: #2ee59d;
+  --accent-green-dim: #22b87c;
+  --accent-green-glow: rgba(46, 229, 157, 0.35);
+
+  /* ----------------------------------------------------------------------------
+     3. Hardware Circuit Lines & Metallic Borders
+     ---------------------------------------------------------------------------- */
+  --line-faint: rgba(53, 168, 255, 0.12);
+  --line-normal: rgba(53, 168, 255, 0.28);
+  --line-strong: rgba(53, 168, 255, 0.60);
+  --line-glow: 0 0 8px rgba(53, 168, 255, 0.45);
+
+  /* Compatibility border aliases */
+  --border-subtle: var(--line-faint);
+  --border-medium: var(--line-normal);
+  --border-bright: var(--line-strong);
+  --border-accent: rgba(53, 168, 255, 0.6);
+
+  /* ----------------------------------------------------------------------------
+     4. Glow & Depth Radii
+     ---------------------------------------------------------------------------- */
+  --glow-sm: 0 0 6px var(--blue-glow);
+  --glow-md: 0 0 12px var(--blue-glow), 0 0 24px rgba(30, 144, 255, 0.22);
+  --glow-lg: 0 0 20px var(--blue-glow), 0 0 40px rgba(30, 144, 255, 0.35);
+  --glow-cyan: 0 0 14px var(--cyan-glow);
+  --glow-node: 0 0 8px #ffffff, 0 0 14px var(--blue-400);
+
+  /* ----------------------------------------------------------------------------
+     5. High-Contrast Typography & Text Tokens (WCAG AA Compliant)
+     ---------------------------------------------------------------------------- */
+  --font-display: "Orbitron", "Rajdhani", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+
+  --text-primary: #e6f1ff;       /* Crisp near-white headings & primary text */
+  --text-secondary: #9db4d3;     /* Muted body text and descriptions */
+  --text-muted: #6b82a3;         /* Subtle labels, inactive timestamps */
+  --text-dim: #475b77;           /* Footer credits, disabled placeholders */
+  --text-inverse: #02060f;
+
+  /* Compatibility aliases */
+  --text-main: var(--text-primary);
+
+  /* Typography Scale */
+  --text-xs: 0.75rem;            /* 12px */
+  --text-sm: 0.875rem;           /* 14px */
+  --text-base: 1rem;             /* 16px */
+  --text-lg: 1.125rem;           /* 18px */
+  --text-xl: 1.25rem;            /* 20px */
+  --text-2xl: 1.5rem;            /* 24px */
+  --text-3xl: 1.875rem;          /* 30px */
+  --text-4xl: 2.25rem;           /* 36px */
+  --text-5xl: 3rem;              /* 48px */
+
+  /* ----------------------------------------------------------------------------
+     6. Status Colors (Always paired with text badges and icons)
+     ---------------------------------------------------------------------------- */
+  --status-green: #2ee59d;
+  --status-green-bg: rgba(46, 229, 157, 0.12);
+  --status-green-text: #2ee59d;
+  --status-green-border: rgba(46, 229, 157, 0.45);
+
+  --status-amber: #ffb020;
+  --status-amber-bg: rgba(255, 176, 32, 0.12);
+  --status-amber-text: #ffb020;
+  --status-amber-border: rgba(255, 176, 32, 0.45);
+
+  --status-red: #ff4d6d;
+  --status-red-bg: rgba(255, 77, 109, 0.14);
+  --status-red-text: #ff4d6d;
+  --status-red-border: rgba(255, 77, 109, 0.45);
+
+  --status-grey: #6b7a90;
+  --status-grey-bg: rgba(107, 122, 144, 0.14);
+  --status-grey-text: #9db4d3;
+  --status-grey-border: rgba(107, 122, 144, 0.35);
+
+  /* ----------------------------------------------------------------------------
+     7. Spacing & Layout Grid Tokens
+     ---------------------------------------------------------------------------- */
+  --space-1: 0.25rem;            /* 4px */
+  --space-2: 0.5rem;             /* 8px */
+  --space-3: 0.75rem;            /* 12px */
+  --space-4: 1rem;               /* 16px */
+  --space-5: 1.25rem;            /* 20px */
+  --space-6: 1.5rem;             /* 24px */
+  --space-8: 2rem;               /* 32px */
+  --space-10: 2.5rem;            /* 40px */
+  --space-12: 3rem;              /* 48px */
+  --space-16: 4rem;              /* 64px */
+
+  /* Surface Geometry & Hardware Chamfer */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-full: 9999px;
+
+  /* Hardware Chamfer Clip-Path for Cards & Panels */
+  --hardware-chamfer: polygon(
+    0 8px,
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px)
+  );
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Hierarchy */
+  --z-bg-base: -10;
+  --z-bg-circuit: -5;
+  --z-base: 1;
+  --z-nav: 50;
+  --z-sticky: 100;
+  --z-modal: 500;
+  --z-toast: 1000;
+}

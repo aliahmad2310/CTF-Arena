@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cybersecurity Labs - CTF Arena</title>
+  <meta name="description" content="Explore cybersecurity training labs covering Web Security, Cryptography, Binary Exploitation, and Digital Forensics.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+
+  <main class="site-main container">
+    <!-- Catalog Header -->
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-8);">
+      <div>
+        <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-2);">Training Labs</h1>
+        <p class="text-dim" style="margin: 0;">Multi-stage attack vectors and hands-on vulnerability scenarios.</p>
+      </div>
+
+      <!-- Search & Filters -->
+      <div style="display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center;">
+        <div style="position: relative; min-width: 240px;">
+          <input type="text" id="search-input" class="form-input form-input-mono" placeholder="Filter by lab or tag...">
+        </div>
+
+        <select id="difficulty-filter" class="form-select form-input-mono" style="width: auto;">
+          <option value="">All Difficulties</option>
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+          <option value="Insane">Insane</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Labs Grid -->
+    <div id="labs-grid" class="grid-2">
+      <!-- Loading Skeletons -->
+      <div class="card" style="height: 240px; padding: var(--space-5);">
+        <div class="skeleton" style="height: 24px; width: 60%; margin-bottom: var(--space-3);"></div>
+        <div class="skeleton" style="height: 16px; width: 90%; margin-bottom: var(--space-2);"></div>
+        <div class="skeleton" style="height: 16px; width: 75%; margin-bottom: var(--space-6);"></div>
+        <div class="skeleton" style="height: 36px; width: 100%; margin-top: auto;"></div>
+      </div>
+      <div class="card" style="height: 240px; padding: var(--space-5);">
+        <div class="skeleton" style="height: 24px; width: 60%; margin-bottom: var(--space-3);"></div>
+        <div class="skeleton" style="height: 16px; width: 90%; margin-bottom: var(--space-2);"></div>
+        <div class="skeleton" style="height: 16px; width: 75%; margin-bottom: var(--space-6);"></div>
+        <div class="skeleton" style="height: 36px; width: 100%; margin-top: auto;"></div>
+      </div>
+    </div>
+
+    <!-- Empty State (hidden by default) -->
+    <div id="empty-state" class="hidden" style="text-align: center; padding: var(--space-12) 0;">
+      <p class="text-dim" style="font-size: var(--text-base);">No published labs match your filter criteria.</p>
+      <button type="button" id="reset-filter-btn" class="btn btn-sm btn-secondary">
+        Reset Filters
+      </button>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/pages/labs.js"></script>
+</body>
+</html>

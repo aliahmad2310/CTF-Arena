@@ -1,0 +1,220 @@
+/* ==============================================================================
+   CTF Arena - Base Styles, Reset, Global Typography & Accessibility
+   File: frontend/css/base.css
+   Hardware-inspired Cybersecurity Theme matching the Motherboard Reference
+   Strict Rule: Absolutely zero emoji anywhere in this file.
+   ============================================================================== */
+
+/* Pinned Google Fonts with Local/System Fallbacks */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@600;700&display=swap");
+
+/* Modern Box-Sizing Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ----------------------------------------------------------------------------
+   Hardware Display Headings (Orbitron & Rajdhani with JetBrains Mono Numbers)
+   ---------------------------------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin-bottom: var(--space-3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.85);
+}
+
+h1 { font-size: var(--text-3xl); letter-spacing: 0.06em; }
+h2 { font-size: var(--text-2xl); letter-spacing: 0.05em; }
+h3 { font-size: var(--text-xl); }
+h4 { font-size: var(--text-lg); }
+h5 { font-size: var(--text-base); }
+h6 { font-size: var(--text-sm); }
+
+@media (min-width: 768px) {
+  h1 { font-size: var(--text-4xl); }
+  h2 { font-size: var(--text-3xl); }
+}
+
+@media (min-width: 1200px) {
+  h1 { font-size: var(--text-5xl); }
+}
+
+p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+  line-height: 1.65;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+}
+
+/* Hyperlinks with Electric Blue Glow */
+a {
+  color: var(--blue-400);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+a:hover {
+  color: var(--blue-300);
+  text-shadow: var(--glow-sm);
+  text-decoration: none;
+}
+
+/* Small Tech Labels & Metadata Badges */
+.text-mono {
+  font-family: var(--font-mono);
+}
+
+.text-display {
+  font-family: var(--font-display);
+}
+
+.text-sm { font-size: var(--text-sm); }
+.text-xs { font-size: var(--text-xs); }
+.text-dim { color: var(--text-muted); }
+.text-accent { color: var(--blue-400); text-shadow: var(--glow-sm); }
+.text-cyan { color: var(--cyan-400); text-shadow: var(--glow-cyan); }
+
+/* Monospace Code, Preformatted Blocks & Inline Spans */
+code, kbd, samp {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background-color: var(--bg-input);
+  border: 1px solid var(--line-normal);
+  color: var(--blue-300);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+}
+
+pre {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background-color: var(--bg-input);
+  border: 1px solid var(--line-normal);
+  border-left: 3px solid var(--blue-500);
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+pre code {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* ----------------------------------------------------------------------------
+   Custom Hardware Scrollbars
+   ---------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--bg-base);
+  border-left: 1px solid var(--line-faint);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--bg-panel-raised);
+  border: 1px solid var(--line-normal);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 4px rgba(30, 144, 255, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--blue-600);
+  border-color: var(--blue-400);
+  box-shadow: 0 0 6px var(--blue-glow);
+}
+
+/* Text Selection */
+::selection {
+  background-color: rgba(30, 144, 255, 0.35);
+  color: #ffffff;
+  text-shadow: 0 0 6px var(--blue-400);
+}
+
+/* ----------------------------------------------------------------------------
+   Visible Keyboard Accessibility Focus Rings (WCAG AA Compliance)
+   ---------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--blue-400);
+  outline-offset: 2px;
+  box-shadow: var(--glow-md);
+}
+
+/* High Contrast Horizontal Rules with Circuit Solder Pad Center */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--line-normal) 25%,
+    var(--blue-400) 50%,
+    var(--line-normal) 75%,
+    transparent 100%
+  );
+  margin: var(--space-8) 0;
+  position: relative;
+}
+
+hr::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 7px;
+  height: 7px;
+  background-color: #ffffff;
+  border: 2px solid var(--blue-500);
+  border-radius: 50%;
+  box-shadow: var(--glow-node);
+}
+
+/* Screen Reader Only Utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

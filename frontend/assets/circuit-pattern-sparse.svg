@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+  <!-- CTF Arena Motherboard Circuit Tile - Sparse Variant -->
+  <!-- Strict Rule: Absolutely zero emoji anywhere in this file. -->
+
+  <style>
+    .trace-faint { stroke: rgba(53, 168, 255, 0.18); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+    .trace-cyan { stroke: rgba(0, 240, 255, 0.35); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+    .via-faint { fill: #0a1428; stroke: rgba(53, 168, 255, 0.5); stroke-width: 1.5; }
+    .dot-faint { fill: rgba(53, 168, 255, 0.3); }
+  </style>
+
+  <!-- Large sweeping track across tile -->
+  <path d="M 0 100 L 120 100 L 180 160 L 180 320 L 240 380 L 400 380" class="trace-faint" />
+  <circle cx="400" cy="380" r="3.5" class="via-faint" />
+  <circle cx="400" cy="380" r="1.5" fill="#ffffff" />
+
+  <path d="M 180 200 L 260 200 L 320 260 L 320 460" class="trace-cyan" />
+  <circle cx="320" cy="460" r="4" class="via-faint" />
+  <circle cx="320" cy="460" r="1.5" fill="#22e0ff" />
+
+  <!-- Diagonal Bus track -->
+  <path d="M 450 0 L 450 120 L 520 190 L 520 340 L 600 340" class="trace-faint" />
+  <circle cx="450" cy="120" r="3" class="via-faint" />
+
+  <!-- Bottom Left sweep -->
+  <path d="M 80 600 L 80 500 L 150 430 L 240 430" class="trace-faint" />
+  <circle cx="240" cy="430" r="3" class="via-faint" />
+
+  <!-- Pin Groups -->
+  <circle cx="210" cy="250" r="1.5" class="dot-faint" />
+  <circle cx="210" cy="265" r="1.5" class="dot-faint" />
+  <circle cx="210" cy="280" r="1.5" class="dot-faint" />
+  <circle cx="210" cy="295" r="1.5" class="dot-faint" />
+
+  <circle cx="480" cy="260" r="1.5" class="dot-faint" />
+  <circle cx="480" cy="275" r="1.5" class="dot-faint" />
+  <circle cx="480" cy="290" r="1.5" class="dot-faint" />
+</svg>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Users - Admin Console</title>
+  <meta name="description" content="Manage registered competitors, inspect account roles, and enforce security account bans.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-6);">
+      <div>
+        <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-1);">Competitor Directory &amp; Access Controls</h1>
+        <p class="text-dim" style="margin: 0; font-size: var(--text-sm);">
+          Review registered competitors, create accounts, reset passwords, or delete users.
+        </p>
+      </div>
+      <div>
+        <button type="button" id="create-user-btn" class="btn btn-primary btn-sm">
+          Create New User
+        </button>
+      </div>
+    </div>
+
+    <!-- Users Table Card -->
+    <div class="card">
+      <div class="table-container" style="border: none; border-radius: 0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Display Name</th>
+              <th>Role</th>
+              <th>Team</th>
+              <th>Status</th>
+              <th>Registered</th>
+              <th style="text-align: right;">Administrative Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Loading user directory...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/users.js"></script>
+</body>
+</html>

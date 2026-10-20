@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progress Matrix Heatmap - CTF Arena</title>
+  <meta name="description" content="Two-dimensional progress matrix heatmap comparing competitor and squad solve status across all published CTF labs.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container">
+    <!-- Header -->
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-6); flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
+          <span class="badge badge-green">High Density View</span>
+          <span class="text-mono text-dim text-xs">SOLVE MATRIX</span>
+        </div>
+        <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-1);">Progress Matrix Heatmap</h1>
+        <p class="text-dim" style="margin: 0;">
+          Inspect status across all labs with sticky headers and formula-sanitized CSV export.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button id="export-matrix-csv-btn" class="btn btn-outline btn-sm">Export Matrix CSV</button>
+      </div>
+    </div>
+
+    <!-- Dimension Toggle & Legend Toolbar -->
+    <div class="card" style="margin-bottom: var(--space-6);">
+      <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <!-- Toggle Mode -->
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <span class="text-mono text-xs text-dim">Aggregation Mode:</span>
+          <div class="btn-group">
+            <button id="mode-users-btn" class="btn btn-primary btn-sm">Individual Competitors</button>
+            <button id="mode-teams-btn" class="btn btn-secondary btn-sm">Squads / Teams</button>
+          </div>
+        </div>
+
+        <!-- Matrix Legend (Never relying on color alone) -->
+        <div class="matrix-legend">
+          <div class="legend-item">
+            <div class="legend-box" style="background-color: var(--status-grey-bg); border: 1px solid var(--status-grey-border);"></div>
+            <span>Not Started (0%)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-box" style="background-color: var(--status-amber-bg); border: 1px solid var(--status-amber-border);"></div>
+            <span>In Progress (1-99%)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-box" style="background-color: var(--status-green-bg); border: 1px solid var(--status-green-border);"></div>
+            <span>Completed (100%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Matrix Heatmap Table Container -->
+    <div class="card" style="margin-bottom: var(--space-8);">
+      <div class="matrix-container" id="matrix-container">
+        <div style="padding: var(--space-8); text-align: center; color: var(--text-dim);">
+          Generating progress heatmap matrix...
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/matrix.js"></script>
+</body>
+</html>

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theme Preview &amp; Design System - CTF Arena</title>
+  <meta name="description" content="Visual theme verification showcase for CTF Arena hardware-inspired cybersecurity design system.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    .preview-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-8) var(--space-4);
+    }
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-8);
+    }
+    .swatch-card {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--line-normal);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .swatch-color {
+      height: 64px;
+      width: 100%;
+    }
+    .swatch-meta {
+      padding: var(--space-2) var(--space-3);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+    }
+    .swatch-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .swatch-hex {
+      color: var(--text-muted);
+    }
+    .section-box {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--line-normal);
+      border-radius: var(--radius-sm);
+      padding: var(--space-6);
+      margin-bottom: var(--space-8);
+      position: relative;
+    }
+    .section-box::before {
+      content: "";
+      position: absolute;
+      top: -1px;
+      left: 16px;
+      right: 16px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--blue-400), transparent);
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <!-- Header -->
+    <div style="margin-bottom: var(--space-8);">
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
+        <span style="font-family: var(--font-mono); font-size: var(--text-xs); padding: 2px 8px; border-radius: 2px; background: var(--blue-glow); color: var(--blue-300); border: 1px solid var(--blue-400);">
+          DESIGN SYSTEM VERIFICATION
+        </span>
+        <span class="text-mono text-dim text-xs">HARDWARE MOTHERBOARD PALETTE</span>
+      </div>
+      <h1>CTF Arena Theme Preview</h1>
+      <p>
+        Hardware-inspired cybersecurity console theme based on the glowing electric-blue motherboard reference.
+      </p>
+    </div>
+
+    <!-- Section 1: Color Tokens Swatches -->
+    <h2>1. Core Surface &amp; Accent Palette</h2>
+    <div class="swatch-grid">
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--bg-deep);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--bg-deep</div>
+          <div class="swatch-hex">#02060f</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--bg-base);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--bg-base</div>
+          <div class="swatch-hex">#050b18</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--bg-panel);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--bg-panel</div>
+          <div class="swatch-hex">#0a1428</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--bg-panel-raised);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--bg-panel-raised</div>
+          <div class="swatch-hex">#0e1c38</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--blue-500); box-shadow: var(--glow-md);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--blue-500 (Primary)</div>
+          <div class="swatch-hex">#1e90ff</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--blue-400); box-shadow: var(--glow-sm);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--blue-400 (Traces)</div>
+          <div class="swatch-hex">#35a8ff</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--blue-300);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--blue-300 (Pins)</div>
+          <div class="swatch-hex">#6cc6ff</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--cyan-400); box-shadow: var(--glow-cyan);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--cyan-400 (Accent)</div>
+          <div class="swatch-hex">#22e0ff</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Status Badges -->
+    <h2>2. Functional Status Tokens</h2>
+    <div class="swatch-grid">
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--status-green);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--status-green</div>
+          <div class="swatch-hex">#2ee59d (Success)</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--status-amber);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--status-amber</div>
+          <div class="swatch-hex">#ffb020 (Warning)</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--status-red);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--status-red</div>
+          <div class="swatch-hex">#ff4d6d (Danger)</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-color" style="background-color: var(--status-grey);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--status-grey</div>
+          <div class="swatch-hex">#6b7a90 (Neutral)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Typography Showcase -->
+    <h2>3. Typography Scale &amp; Font Families</h2>
+    <div class="section-box">
+      <div style="margin-bottom: var(--space-4);">
+        <h1 style="margin-bottom: var(--space-1);">H1 DISPLAY: CYBERSPACE OPERATIONS</h1>
+        <div class="text-mono text-dim text-xs">Orbitron 700 / letter-spacing: 0.06em</div>
+      </div>
+      <div style="margin-bottom: var(--space-4);">
+        <h2 style="margin-bottom: var(--space-1);">H2 SECTION: HARDWARE TELEMETRY GRID</h2>
+        <div class="text-mono text-dim text-xs">Orbitron 700 / letter-spacing: 0.05em</div>
+      </div>
+      <div style="margin-bottom: var(--space-4);">
+        <h3 style="margin-bottom: var(--space-1);">H3 MODULE: SQUAD COMMUNICATIONS BUS</h3>
+        <div class="text-mono text-dim text-xs">Orbitron 700 / font-size: 1.25rem</div>
+      </div>
+      <hr>
+      <div>
+        <p>
+          Body paragraph in <strong style="color: var(--text-primary);">Inter</strong>: Competitors solve interactive cyber defense challenges across diverse threat vectors including Binary Exploitation, Cryptographic Protocol Analysis, and Hardware Firmware Reverse Engineering.
+        </p>
+        <p class="text-mono" style="color: var(--blue-300);">
+          Monospace text in <strong>JetBrains Mono</strong>: <code>CTF{motherboard_bus_signal_synchronized}</code> &bull; 0x7FFF5FBFFD00 &bull; 100/100 points.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 4: Hardware Divider & Glow Utilities -->
+    <h2>4. Hardware Dividers &amp; Focus Indicators</h2>
+    <div class="section-box">
+      <p>Demonstrating circuit trace dividers with glowing solder-pad node centers:</p>
+      <hr>
+      <p style="margin-top: var(--space-4);">
+        Interactive focus ring testing: Tab to focus this element &rarr;
+        <a href="#test-link" style="display: inline-block; padding: 4px 12px; border: 1px solid var(--blue-400); border-radius: 2px;">
+          Focusable Hardware Link
+        </a>
+    <!-- Section 5: Brand Vector Assets & Inline SVG Icons -->
+    <h2>5. Brand Vector Assets &amp; Vector Icons</h2>
+    <div class="section-box">
+      <div style="display: flex; gap: var(--space-8); align-items: center; flex-wrap: wrap; margin-bottom: var(--space-6);">
+        <div>
+          <div class="text-mono text-dim text-xs" style="margin-bottom: var(--space-2);">BRAND LOGO (SVG)</div>
+          <img src="/assets/logo.svg" alt="CTF Arena Logo" height="48">
+        </div>
+        <div>
+          <div class="text-mono text-dim text-xs" style="margin-bottom: var(--space-2);">FAVICON (SVG)</div>
+          <img src="/assets/favicon.svg" alt="CTF Arena Favicon" width="32" height="32">
+        </div>
+      </div>
+
+      <div style="margin-bottom: var(--space-6);">
+        <div class="text-mono text-dim text-xs" style="margin-bottom: var(--space-2);">CYBER DEFENSE HERO ART (SVG)</div>
+        <div style="max-width: 640px; border: 1px solid var(--line-normal); border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-deep);">
+          <img src="/assets/hero-art.svg" alt="Cyber Defense Mission Art" style="width: 100%; height: auto; display: block;">
+        </div>
+      </div>
+
+      <div>
+        <div class="text-mono text-dim text-xs" style="margin-bottom: var(--space-2);">INLINE SVG ICONS (STRICT ZERO EMOJI)</div>
+        <div id="icon-showcase-grid" style="display: flex; gap: 1rem; flex-wrap: wrap;"></div>
+      </div>
+    </div>
+
+    <!-- Section 6: Core Hardware Components -->
+    <h2>6. Core Hardware Components</h2>
+
+    <!-- Sub-section: Buttons -->
+    <div class="section-box">
+      <h3 style="font-size: var(--text-base); margin-bottom: var(--space-3);">Hardware Buttons</h3>
+      <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; margin-bottom: var(--space-4);">
+        <button class="btn btn-primary">Primary Action</button>
+        <button class="btn btn-secondary">Secondary Outline</button>
+        <button class="btn btn-danger">Emergency Purge</button>
+        <button class="btn btn-ghost">Ghost Option</button>
+        <button class="btn btn-primary" disabled>Disabled State</button>
+        <button class="btn btn-primary">
+          <span class="spinner"></span>
+          Processing
+        </button>
+      </div>
+      <div style="display: flex; gap: var(--space-2); align-items: center;">
+        <button class="btn btn-primary btn-xs">Extra Small</button>
+        <button class="btn btn-primary btn-sm">Small</button>
+        <button class="btn btn-primary">Default</button>
+        <button class="btn btn-primary btn-lg">Large Action</button>
+      </div>
+    </div>
+
+    <!-- Sub-section: Badges & Status Pills -->
+    <div class="section-box">
+      <h3 style="font-size: var(--text-base); margin-bottom: var(--space-3);">Color-Coded Status Pills (Zero Emoji)</h3>
+      <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center;">
+        <span class="badge badge-green">COMPLETED</span>
+        <span class="badge badge-amber">IN PROGRESS</span>
+        <span class="badge badge-grey">NOT STARTED</span>
+        <span class="badge badge-red">ATTEMPT FAILED</span>
+        <span class="badge badge-cyan">FIRST BLOOD</span>
+        <span class="badge badge-blue">EASY / 100 PTS</span>
+      </div>
+    </div>
+
+    <!-- Sub-section: Terminal Form Inputs -->
+    <div class="section-box">
+      <h3 style="font-size: var(--text-base); margin-bottom: var(--space-3);">Terminal Forms &amp; Inputs</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-4);">
+        <div class="form-group">
+          <label class="form-label" for="sample-input">Competitor Call-sign</label>
+          <input type="text" id="sample-input" class="form-input" placeholder="e.g. shadow_operator">
+          <span class="form-help">Enter your alphanumeric username.</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="sample-select">Challenge Threat Vector</label>
+          <select id="sample-select" class="form-select">
+            <option>Binary Exploitation (Pwn)</option>
+            <option>Cryptographic Analysis</option>
+            <option>Web Application Exploitation</option>
+            <option>Firmware Reverse Engineering</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-section: Telemetry Tables -->
+    <div class="section-box">
+      <h3 style="font-size: var(--text-base); margin-bottom: var(--space-3);">Telemetry Table with Hover Rows</h3>
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Competitor</th>
+              <th>Squad Affiliation</th>
+              <th>Status</th>
+              <th>Solves Ratio</th>
+              <th>Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-mono" style="font-weight: 700; color: #ffffff;">#01</td>
+              <td style="font-weight: 600;">valkyrie</td>
+              <td><span class="badge badge-blue">NullPointer</span></td>
+              <td><span class="badge badge-green">COMPLETED</span></td>
+              <td class="text-mono">6/6 (100%)</td>
+              <td class="text-mono" style="font-weight: 700; color: var(--blue-300);">1,450</td>
+            </tr>
+            <tr>
+              <td class="text-mono" style="font-weight: 700; color: #ffffff;">#02</td>
+              <td style="font-weight: 600;">zero_day</td>
+              <td><span class="badge badge-blue">RootSquad</span></td>
+              <td><span class="badge badge-amber">IN PROGRESS</span></td>
+              <td class="text-mono">4/6 (66%)</td>
+              <td class="text-mono" style="font-weight: 700; color: var(--blue-300);">950</td>
+            </tr>
+            <tr>
+              <td class="text-mono text-dim">#03</td>
+              <td style="font-weight: 600;">cipher_lock</td>
+              <td><span class="text-dim text-xs">Solo</span></td>
+              <td><span class="badge badge-grey">NOT STARTED</span></td>
+              <td class="text-mono text-dim">0/6 (0%)</td>
+              <td class="text-mono text-dim">0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sub-section: Segmented Progress Bars & Skeletons -->
+    <div class="section-box">
+      <h3 style="font-size: var(--text-base); margin-bottom: var(--space-3);">Hardware Progress Bars &amp; Skeleton Shimmer</h3>
+      <div style="margin-bottom: var(--space-4);">
+        <div style="display: flex; justify-content: space-between; font-size: var(--text-xs); margin-bottom: var(--space-1);">
+          <span class="text-mono text-secondary">Lab Exploitation Progress: 66%</span>
+          <span class="text-mono text-dim">4 of 6 Challenges Solved</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 66%;"></div>
+        </div>
+      </div>
+      <div>
+        <div class="text-mono text-dim text-xs" style="margin-bottom: var(--space-2);">SHIMMER SKELETON LOADER</div>
+        <div class="skeleton" style="height: 48px; width: 100%; border: 1px solid var(--line-faint);"></div>
+      </div>
+    </div>
+
+    <!-- Section 7: Special Components & Effects -->
+    <h2>7. Special Components &amp; Effects</h2>
+
+    <!-- Flag Submission Terminal Console -->
+    <div class="section-box">
+      <h3 style="font-size: var(--text-base); margin-bottom: var(--space-3);">Terminal Flag Console &amp; Dynamic Feedback</h3>
+      <div id="demo-flag-box" class="flag-console-box" style="margin-bottom: var(--space-3);">
+        <div class="flag-prompt-prefix">
+          <span>OPERATOR@ARENA:~$</span>
+          <span>submit_flag</span>
+        </div>
+        <div style="display: flex; align-items: center; margin-top: 4px;">
+          <input type="text" id="demo-flag-input" class="flag-input-terminal" value="CTF{motherboard_bus_master}" placeholder="CTF{...}">
+          <span class="terminal-caret"></span>
+        </div>
+      </div>
+      <div style="display: flex; gap: var(--space-3);">
+        <button id="btn-test-success" class="btn btn-primary btn-sm">Simulate Correct Flag</button>
+        <button id="btn-test-wrong" class="btn btn-danger btn-sm">Simulate Wrong Flag</button>
+        <button id="btn-test-reset" class="btn btn-secondary btn-sm">Reset</button>
+      </div>
+    </div>
+
+    <!-- Digital Segmented Countdown Timer -->
+    <div class="section-box">
+      <h3 style="font-size: var(--text-base); margin-bottom: var(--space-3);">Digital Segmented Countdown Timer</h3>
+      <div class="countdown-grid">
+        <div class="countdown-block">
+          <div class="countdown-value">02</div>
+          <div class="countdown-label">Days</div>
+        </div>
+        <div class="countdown-block">
+          <div class="countdown-value">14</div>
+          <div class="countdown-label">Hours</div>
+        </div>
+        <div class="countdown-block">
+          <div class="countdown-value">38</div>
+          <div class="countdown-label">Minutes</div>
+        </div>
+        <div class="countdown-block">
+          <div class="countdown-value">55</div>
+          <div class="countdown-label">Seconds</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart.js Motherboard Theme Integration -->
+    <div class="section-box">
+      <h3 style="font-size: var(--text-base); margin-bottom: var(--space-3);">Chart.js Electric Blue Palette</h3>
+      <div style="height: 240px; position: relative;">
+        <canvas id="demoTimelineChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layered Motherboard Circuit Background Elements -->
+  <div class="circuit-bg-container" aria-hidden="true">
+    <div class="circuit-layer-vignette"></div>
+    <div class="circuit-layer-grid"></div>
+    <div class="circuit-layer-traces"></div>
+    <div class="circuit-layer-wash"></div>
+    <div class="circuit-layer-pulses">
+      <div class="pulse-line pulse-line-1"></div>
+      <div class="pulse-line pulse-line-2"></div>
+      <div class="pulse-line pulse-line-3"></div>
+      <div class="pulse-line pulse-line-4"></div>
+    </div>
+    <canvas id="circuit-canvas"></canvas>
+  </div>
+
+  <script src="/js/circuit-bg.js"></script>
+  <script type="module">
+    import { Icons } from "/js/icons.js";
+    import { ChartTheme } from "/js/chartTheme.js";
+
+    // 1. Render Icon Showcase
+    const container = document.getElementById("icon-showcase-grid");
+    if (container) {
+      const iconNames = ["terminal", "flag", "shield", "lock", "unlock", "trophy", "users", "user", "chart", "activity", "alert", "clock", "settings", "search", "download", "refresh", "grid", "cpu", "check", "cross"];
+      container.innerHTML = iconNames.map(name => `
+        <div style="background: var(--bg-panel-raised); border: 1px solid var(--line-normal); padding: 8px 12px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 8px;">
+          <span style="color: var(--blue-400); display: flex; align-items: center;">${Icons[name] ? Icons[name](20) : ""}</span>
+          <span class="text-mono text-xs" style="color: var(--text-secondary);">${name}</span>
+        </div>
+      `).join("");
+    }
+
+    // 2. Interactive Flag Animation Handlers
+    const flagBox = document.getElementById("demo-flag-box");
+    const btnSuccess = document.getElementById("btn-test-success");
+    const btnWrong = document.getElementById("btn-test-wrong");
+    const btnReset = document.getElementById("btn-test-reset");
+
+    if (flagBox && btnSuccess && btnWrong && btnReset) {
+      btnSuccess.addEventListener("click", () => {
+        flagBox.className = "flag-console-box flag-result-success";
+      });
+      btnWrong.addEventListener("click", () => {
+        flagBox.className = "flag-console-box";
+        void flagBox.offsetWidth; // Trigger reflow
+        flagBox.className = "flag-console-box flag-result-wrong";
+      });
+      btnReset.addEventListener("click", () => {
+        flagBox.className = "flag-console-box";
+      });
+    }
+
+    // 3. Render Chart.js Motherboard Timeline Chart
+    const canvas = document.getElementById("demoTimelineChart");
+    if (canvas && window.Chart) {
+      ChartTheme.applyDefaults(window.Chart);
+      new window.Chart(canvas, {
+        type: "line",
+        data: {
+          labels: ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00"],
+          datasets: [
+            ChartTheme.getTimelineDataset("NullPointer", [100, 350, 600, 950, 1200, 1450], ChartTheme.colors.cyan400),
+            ChartTheme.getTimelineDataset("RootSquad", [0, 200, 450, 700, 850, 950], ChartTheme.colors.blue400)
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "top",
+              labels: { color: "#e6f1ff", font: { family: "'JetBrains Mono', monospace" } }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competition Settings - Admin Console</title>
+  <meta name="description" content="Configure CTF competition timeline, freeze leaderboards, and adjust game rules.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container" style="max-width: 680px;">
+    <div style="margin-bottom: var(--space-6);">
+      <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-1);">Competition Global Settings</h1>
+      <p class="text-dim" style="margin: 0; font-size: var(--text-sm);">
+        Adjust competition timeline, freeze the live scoreboard, and configure team constraints.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 style="font-size: var(--text-base); margin: 0;">Game State Configuration</h2>
+        <span id="cs-state-badge" class="badge badge-green">Active</span>
+      </div>
+      <div class="card-body">
+        <form id="ctf-settings-form">
+          <div class="form-group">
+            <label class="form-label" for="cs-title">Competition Title</label>
+            <input type="text" id="cs-title" class="form-input" required minlength="3" maxlength="100">
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="cs-start">Start Time</label>
+              <input type="datetime-local" id="cs-start" class="form-input form-input-mono">
+              <div class="form-helper">Submissions locked before this time.</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cs-end">End Time</label>
+              <input type="datetime-local" id="cs-end" class="form-input form-input-mono">
+              <div class="form-helper">Submissions locked after this time.</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="cs-max-team">Maximum Operatives Per Squad</label>
+            <input type="number" id="cs-max-team" class="form-input form-input-mono" min="1" max="20" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="cs-leaderboard-refresh">Leaderboard Auto-Refresh Interval (Seconds)</label>
+            <input type="number" id="cs-leaderboard-refresh" class="form-input form-input-mono" min="0" max="3600" required>
+            <div class="form-helper">Controls how frequently the public scoreboard updates (0 to pause automatic refresh; standard is 15s).</div>
+          </div>
+
+          <!-- Toggles -->
+          <div style="display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4); margin-bottom: var(--space-6);">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" id="cs-active">
+              <label for="cs-active" class="text-sm font-bold" style="color: #ffffff;">Competition Active</label>
+              <span class="text-dim text-xs">(Uncheck to pause submissions instantly)</span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" id="cs-freeze">
+              <label for="cs-freeze" class="text-sm font-bold" style="color: #ffffff;">Freeze Public Leaderboard</label>
+              <span class="text-dim text-xs">(Keeps final scores confidential before ceremony)</span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" id="cs-dynamic">
+              <label for="cs-dynamic" class="text-sm font-bold" style="color: #ffffff;">Dynamic Challenge Scoring</label>
+              <span class="text-dim text-xs">(Decays challenge value as more teams solve)</span>
+            </div>
+          </div>
+
+          <button type="submit" id="save-settings-btn" class="btn btn-primary">
+            Save Configuration Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/settings.js"></script>
+</body>
+</html>

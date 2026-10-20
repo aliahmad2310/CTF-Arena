@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submissions Audit Log - Admin Console</title>
+  <meta name="description" content="Audit global flag submissions, brute-force attempts, and solve records on CTF Arena.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+
+  <main class="site-main container">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-6);">
+      <div>
+        <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-1);">Global Submissions Audit Trail</h1>
+        <p class="text-dim" style="margin: 0; font-size: var(--text-sm);">
+          Real-time telemetry log of flag submissions, correct captures, and incorrect guesses.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: var(--space-2);">
+        <button type="button" id="refresh-submissions-btn" class="btn btn-sm btn-secondary">
+          Refresh Log
+        </button>
+      </div>
+    </div>
+
+    <!-- Submissions Table Card -->
+    <div class="card">
+      <div class="table-container" style="border: none; border-radius: 0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Name</th>
+              <th>Squad</th>
+              <th>Challenge</th>
+              <th>Submitted String</th>
+              <th>Outcome</th>
+            </tr>
+          </thead>
+          <tbody id="submissions-tbody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                Loading submissions stream...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script type="module" src="/js/admin/submissions.js"></script>
+</body>
+</html>
