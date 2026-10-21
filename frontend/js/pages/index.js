@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   ]);
 
   if (canEditChampionship) {
+    document.getElementById("enter-labs-btn")?.setAttribute("href", "/admin/labs.html");
     try {
       await requireAdmin();
       bindChampionshipEditor();
