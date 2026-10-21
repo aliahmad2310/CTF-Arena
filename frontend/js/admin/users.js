@@ -27,14 +27,11 @@ function initCreateUserBtn() {
   if (!btn) return;
 
   btn.onclick = () => {
+    const availableTeams = cachedTeams.filter((team) => team.id);
     showModal({
       title: "Create User Account",
       contentHtml: `
         <form id="create-user-form" style="display: flex; flex-direction: column; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label" for="cu-email">Email Address</label>
-            <input type="email" id="cu-email" class="form-input" required placeholder="user@domain.com">
-          </div>
           <div class="form-group">
             <label class="form-label" for="cu-username">Username</label>
             <input type="text" id="cu-username" class="form-input form-input-mono" required minlength="3" maxlength="30" placeholder="handle">
@@ -48,6 +45,14 @@ function initCreateUserBtn() {
             <input type="password" id="cu-password" class="form-input form-input-mono" required minlength="6" placeholder="Minimum 6 characters">
           </div>
           <div class="form-group">
+            <label class="form-label" for="cu-team">Team (Optional)</label>
+            <select id="cu-team" class="form-input form-select">
+              <option value="">No team</option>
+              ${availableTeams.map((team) => `<option value="${team.id}">${escapeHtml(team.name)}</option>`).join("")}
+            </select>
+            <div class="form-helper">Team capacity is enforced when the account is created.</div>
+          </div>
+          <div class="form-group">
             <label class="form-label" for="cu-role">Role</label>
             <select id="cu-role" class="form-input form-select">
               <option value="user" selected>Competitor (User)</option>
@@ -58,24 +63,24 @@ function initCreateUserBtn() {
       `,
       confirmText: "Create Account",
       onConfirm: async () => {
-        const email = document.getElementById("cu-email").value.trim();
         const username = document.getElementById("cu-username").value.trim();
         const displayName = document.getElementById("cu-display-name").value.trim();
         const password = document.getElementById("cu-password").value;
         const role = document.getElementById("cu-role").value;
+        const teamId = document.getElementById("cu-team").value;
 
-        if (!email || !username || !password) {
-          showToast("Email, username, and password are required", "error");
+        if (!username || !password) {
+          showToast("Username and password are required", "error");
           return false;
         }
 
         try {
           await api.post("/admin/users", {
-            email,
             username,
             display_name: displayName || username,
             password,
-            role
+            role,
+            team_id: teamId || null
           });
           showToast(`User '${username}' created successfully`, "success");
           await loadUsers();
@@ -92,12 +97,18 @@ function initCreateUserBtn() {
 async function loadUsers() {
   const tbody = document.getElementById("users-tbody");
   try {
-    const users = await api.get("/admin/users");
+    const [users, teams] = await Promise.all([
+      api.get("/admin/users"),
+      api.get("/admin/teams")
+    ]);
+    cachedTeams = teams;
     renderUsers(users);
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
   }
 }
+
+let cachedTeams = [];
 
 function renderUsers(users) {
   const tbody = document.getElementById("users-tbody");

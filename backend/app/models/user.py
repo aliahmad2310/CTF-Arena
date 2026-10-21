@@ -31,6 +31,18 @@ class HeartbeatRequest(BaseModel):
     current_challenge_id: Optional[UUID] = None
 
 
+class UsernameLoginRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=30, pattern=r"^[a-zA-Z0-9_-]+$")
+    password: str = Field(..., min_length=1, max_length=128)
+
+
+class UsernameLoginResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    expires_in: Optional[int] = None
+    token_type: str = "bearer"
+
+
 class UserSolveItem(BaseModel):
     challenge_id: UUID
     challenge_title: str

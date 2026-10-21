@@ -152,9 +152,8 @@ ctf-arena/
       test_admin_monitor.py     # CSV formula sanitization and matrix streaming test cases
       test_security_edge_cases.py # JWT validation, time locks, status reversion tests
   frontend/
-    index.html                  # Landing page, countdown timer, and top 5 preview
-    signup.html                 # Competitor registration
-    login.html                  # Authentication login
+    index.html                  # Landing page for guests and authenticated dashboard at root
+    login.html                  # Username/password login
     forgot-password.html        # Password reset initiation
     reset-password.html         # Password recovery confirmation
     dashboard.html              # Competitor personal command center
@@ -215,12 +214,11 @@ ctf-arena/
 
 | Page Path | Access Level | Purpose | Key Data Read | Actions Performed | Endpoints Invoked |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `index.html` | Public | Mission landing and competition status | Top 5 teams/users, CTF start/end time | View competition countdown timer | `GET /ctf/status`, `GET /leaderboard/users`, `GET /leaderboard/teams` |
-| `signup.html` | Public | Register new competitor account | None | Sign up with email, username, display name | Supabase Auth `signUp()` |
-| `login.html` | Public | Authenticate into platform | None | Sign in with email and password | Supabase Auth `signInWithPassword()` |
-| `forgot-password.html` | Public | Request password reset email | None | Send recovery link | Supabase Auth `resetPasswordForEmail()` |
-| `reset-password.html` | Public | Confirm password update | None | Set new account password | Supabase Auth `updateUser()` |
-| `dashboard.html` | Competitor | Personal training command center | Rank, points, lab progress, recent solves | Resume active labs, inspect profile stats | `GET /dashboard`, `GET /ctf/status` |
+| `index.html` | Public / Competitor | Public landing page or signed-in dashboard | CTF status and top teams for guests; profile, score, progress and activity for signed-in users | Browse labs or review dashboard | `GET /ctf/status`, `GET /leaderboard/teams`, `GET /dashboard` |
+| `login.html` | Public | Authenticate into platform | Username and password | Log in with credentials issued by an administrator | `POST /auth/login` then Supabase session establishment |
+| `forgot-password.html` | Public | Request password reset email | Email address | Send recovery link | Supabase Auth `resetPasswordForEmail()` |
+| `reset-password.html` | Public | Confirm password update | Recovery token | Set new account password | Supabase Auth `updateUser()` |
+| `dashboard.html` | Competitor legacy route | Redirects to the root dashboard | None | Redirect to `/` | None |
 | `labs.html` | Public / Competitor | Catalog of cybersecurity training rooms | Published labs, difficulties, tags | Filter by difficulty and search labs | `GET /rooms` |
 | `lab.html?slug=` | Competitor | Individual lab briefing and challenges | Lab briefing, published challenges, solve status | Navigate to specific challenge targets | `GET /rooms/{slug}` |
 | `challenge.html?id=` | Competitor | Challenge terminal & flag submission | Description, attachments, unlocked hints | Submit flag, unlock hints, download files | `GET /challenges/{id}`, `POST /challenges/{id}/submit`, `POST /hints/{id}/unlock`, `GET /challenges/{id}/files/{file_id}` |
@@ -239,8 +237,8 @@ ctf-arena/
 | `admin/matrix.html` | Admin | Progress matrix heatmap | Competitors/squads by labs heatmap | Toggle users/teams, inspect solve status, export CSV | `GET /admin/monitor/matrix`, `GET /admin/monitor/export/matrix.csv` |
 | `admin/labs.html` | Admin | Lab content management | All labs (published & drafts) | Create, edit, publish/unpublish, delete labs | `GET /admin/rooms`, `POST /admin/rooms`, `PATCH /admin/rooms/{id}`, `DELETE /admin/rooms/{id}` |
 | `admin/challenges.html` | Admin | Challenge authoring & flag manager | All challenges, flags (salted SHA-256) | Create challenge, update salted flags, add hints | `GET /admin/challenges`, `POST /admin/challenges`, `PATCH /admin/challenges/{id}`, `DELETE /admin/challenges/{id}` |
-| `admin/users.html` | Admin | Competitor oversight | Registered competitors, roles, ban status | Ban/unban users, audit account details | `GET /admin/users`, `POST /admin/users/{id}/ban`, `POST /admin/users/{id}/unban` |
-| `admin/teams.html` | Admin | Squad management & integrity | All squads, members, total scores | Disband squads, reset team scores | `GET /admin/teams`, `DELETE /admin/teams/{id}`, `POST /admin/teams/{id}/reset-score` |
+| `admin/users.html` | Admin | Competitor oversight | Registered competitors, roles, ban status and team | Create username/password accounts, assign team, reset password, suspend or delete users | `GET /admin/users`, `POST /admin/users`, `POST /admin/users/{id}/ban` |
+| `admin/teams.html` | Admin | Squad management & integrity | Teams and current members | Create teams, add/remove members, reset scores, disband teams | `GET /admin/teams`, `POST /admin/teams/{id}/members`, `DELETE /admin/teams/{id}/members/{user_id}`, `DELETE /admin/teams/{id}`, `POST /admin/teams/{id}/reset-score` |
 | `admin/submissions.html`| Admin | Global flag submission audit log | All submission attempts, results, flags | Audit raw flag submissions and timestamps | `GET /admin/submissions` |
 | `admin/settings.html` | Admin | Competition schedule & settings | CTF start/end time, active status | Control submission freeze, update dates | `GET /admin/settings`, `PATCH /admin/settings` |
 

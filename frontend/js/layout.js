@@ -92,8 +92,7 @@ function renderNavbar(profile) {
               </button>
             </div>
           ` : `
-            <a href="/login.html" class="btn btn-sm btn-secondary">Sign In</a>
-            <a href="/signup.html" class="btn btn-sm btn-primary">Sign Up</a>
+            <a href="/login.html" class="btn btn-sm btn-secondary">Login</a>
           `}
         </div>
       </div>

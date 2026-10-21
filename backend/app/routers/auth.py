@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 from typing import Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from supabase import create_client
 
+from app.core.config import settings
 from app.core.deps import get_current_user
 from app.core.rate_limit import limiter
 from app.db.client import get_supabase_client
@@ -10,11 +12,58 @@ from app.models.user import (
     UserUpdateRequest,
     HeartbeatRequest,
     PublicUserProfileResponse,
-    UserSolveItem
+    UserSolveItem,
+    UsernameLoginRequest,
+    UsernameLoginResponse
 )
 from app.models.common import MessageResponse
 
 router = APIRouter(prefix="", tags=["User Profile & Authentication"])
+
+
+@router.post("/auth/login", response_model=UsernameLoginResponse)
+@limiter.limit("10/minute")
+async def login_with_username(request: Request, payload: UsernameLoginRequest):
+    """Authenticates a username/password pair without exposing the account email."""
+    supabase = get_supabase_client()
+    try:
+        profile_res = supabase.table("profiles").select("id, is_banned").eq(
+            "username", payload.username.lower()
+        ).limit(1).execute()
+        if not profile_res.data:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+
+        profile = profile_res.data[0]
+        if profile.get("is_banned"):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account has been suspended by system administrator")
+
+        auth_user = supabase.auth.admin.get_user_by_id(str(profile["id"]))
+        account_email = getattr(auth_user.user, "email", None)
+        if not account_email:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+
+        # Use the configured public key and a fresh client so concurrent sign-ins
+        # cannot overwrite shared server-side auth state.
+        auth_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+        auth_response = auth_client.auth.sign_in_with_password({
+            "email": account_email,
+            "password": payload.password
+        })
+        session = auth_response.session
+        if not session:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+
+        return UsernameLoginResponse(
+            access_token=session.access_token,
+            refresh_token=session.refresh_token,
+            expires_in=session.expires_in,
+            token_type=session.token_type
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        # Return the same response for unknown users and bad credentials.
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 
 
 @router.get("/me", response_model=UserProfileResponse)

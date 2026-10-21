@@ -8,6 +8,7 @@ import { supabase } from "../supabaseClient.js";
 import { showToast } from "../ui.js";
 import { initLayout } from "../layout.js";
 import { getSession, getUserProfile } from "../auth.js";
+import { api } from "../api.js";
 
 function getSafeRedirectUrl() {
   const requestedUrl = new URLSearchParams(window.location.search).get("redirect");
@@ -38,23 +39,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const email = document.getElementById("email").value.trim();
+    const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
 
     submitBtn.disabled = true;
     submitBtn.textContent = "Verifying Credentials...";
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+      const data = await api.post("/auth/login", {
+        username,
         password
       });
 
-      if (error) {
-        throw error;
-      }
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token
+      });
+      if (sessionError) throw sessionError;
 
-      showToast("Authentication successful. Redirecting...", "success");
+      showToast("Login successful. Redirecting...", "success");
 
       const redirectUrl = getSafeRedirectUrl();
 
@@ -63,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }, 800);
     } catch (err) {
       submitBtn.disabled = false;
-      submitBtn.textContent = "Authenticate";
+      submitBtn.textContent = "Login";
       showToast(err.message || "Invalid email or password", "error");
     }
   });

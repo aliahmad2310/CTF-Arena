@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     # Supabase Configuration
     SUPABASE_URL: str = "https://your-project.supabase.co"
     SUPABASE_SERVICE_ROLE_KEY: str = "placeholder-service-role-key"
+    SUPABASE_ANON_KEY: str = "placeholder-anon-key"
     SUPABASE_JWT_SECRET: str = "placeholder-jwt-secret"
 
     # CORS and Network

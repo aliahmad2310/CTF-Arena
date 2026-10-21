@@ -19,7 +19,8 @@ from app.models.admin import (
     AdminUserBanRequest,
     AdminUserCreateRequest,
     AdminUserResetPasswordRequest,
-    AdminTeamCreateRequest
+    AdminTeamCreateRequest,
+    AdminTeamMemberRequest
 )
 
 router = APIRouter(prefix="/admin", tags=["Admin Content Management"])
@@ -208,7 +209,7 @@ async def list_admin_users(
 ):
     supabase = get_supabase_client()
     res = supabase.table("profiles").select(
-        "id, username, display_name, role, is_banned, last_seen_at, created_at, teams(name)"
+        "id, username, display_name, role, is_banned, team_id, last_seen_at, created_at, teams(name)"
     ).order("created_at", desc=True).execute()
     return res.data or []
 
@@ -237,18 +238,32 @@ async def admin_create_user(
     supabase = get_supabase_client()
     try:
         # Check username uniqueness in profiles
-        existing = supabase.table("profiles").select("id").eq("username", payload.username).execute()
+        username = payload.username.lower()
+        existing = supabase.table("profiles").select("id").eq("username", username).execute()
         if existing.data and len(existing.data) > 0:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken")
 
+        if payload.team_id:
+            team_id = str(payload.team_id)
+            team_res = supabase.table("teams").select("id").eq("id", team_id).limit(1).execute()
+            if not team_res.data:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+            settings_res = supabase.table("ctf_settings").select("max_team_size").eq("id", 1).limit(1).execute()
+            max_size = settings_res.data[0].get("max_team_size", 4) if settings_res.data else 4
+            members_res = supabase.table("profiles").select("id", count="exact").eq("team_id", team_id).execute()
+            if (members_res.count or 0) >= max_size:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Team has reached its maximum size")
+
         # Create user via Supabase Auth Admin API
         user_attributes = {
-            "email": payload.email,
+            # Supabase Auth still requires an email identifier. Use a reserved,
+            # non-deliverable username alias; users authenticate through /auth/login.
+            "email": f"{username}@users.ctf-arena.invalid",
             "password": payload.password,
             "email_confirm": True,
             "user_metadata": {
-                "username": payload.username,
-                "display_name": payload.display_name or payload.username
+                "username": username,
+                "display_name": payload.display_name or username
             }
         }
         res = supabase.auth.admin.create_user(user_attributes)
@@ -257,16 +272,77 @@ async def admin_create_user(
         # Upsert profile record with chosen role
         supabase.table("profiles").upsert({
             "id": new_user_id,
-            "username": payload.username,
-            "display_name": payload.display_name or payload.username,
-            "role": payload.role
+            "username": username,
+            "display_name": payload.display_name or username,
+            "role": payload.role,
+            "team_id": str(payload.team_id) if payload.team_id else None
         }).execute()
 
-        return MessageResponse(message=f"User '{payload.username}' created successfully")
+        return MessageResponse(message=f"User '{username}' created successfully")
     except HTTPException:
         raise
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create user: {str(exc)}")
+
+
+@router.post("/teams/{id}/members", response_model=MessageResponse, status_code=status.HTTP_200_OK)
+async def admin_add_team_member(
+    id: UUID,
+    payload: AdminTeamMemberRequest,
+    admin: Dict[str, Any] = Depends(require_admin)
+):
+    supabase = get_supabase_client()
+    team_id = str(id)
+    try:
+        team_res = supabase.table("teams").select("id").eq("id", team_id).limit(1).execute()
+        if not team_res.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+
+        user_res = supabase.table("profiles").select("id, team_id").ilike("username", payload.username).limit(1).execute()
+        if not user_res.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        user = user_res.data[0]
+        if user.get("team_id") and str(user["team_id"]) != team_id:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already belongs to another team")
+
+        settings_res = supabase.table("ctf_settings").select("max_team_size").eq("id", 1).limit(1).execute()
+        max_size = settings_res.data[0].get("max_team_size", 4) if settings_res.data else 4
+        members_res = supabase.table("profiles").select("id", count="exact").eq("team_id", team_id).execute()
+        if not user.get("team_id") and (members_res.count or 0) >= max_size:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Team has reached its maximum size")
+
+        supabase.table("profiles").update({"team_id": team_id}).eq("id", str(user["id"])).execute()
+        return MessageResponse(message=f"User '{payload.username}' added to the team")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to add team member: {str(exc)}")
+
+
+@router.delete("/teams/{id}/members/{user_id}", response_model=MessageResponse)
+async def admin_remove_team_member(
+    id: UUID,
+    user_id: UUID,
+    admin: Dict[str, Any] = Depends(require_admin)
+):
+    supabase = get_supabase_client()
+    try:
+        member_res = supabase.table("profiles").select("id, username").eq("id", str(user_id)).eq("team_id", str(id)).limit(1).execute()
+        if not member_res.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team member not found")
+
+        team_res = supabase.table("teams").select("captain_id").eq("id", str(id)).limit(1).execute()
+        if team_res.data and str(team_res.data[0].get("captain_id")) == str(user_id):
+            replacement_res = supabase.table("profiles").select("id").eq("team_id", str(id)).neq("id", str(user_id)).limit(1).execute()
+            replacement_id = replacement_res.data[0]["id"] if replacement_res.data else None
+            supabase.table("teams").update({"captain_id": replacement_id}).eq("id", str(id)).execute()
+
+        supabase.table("profiles").update({"team_id": None}).eq("id", str(user_id)).execute()
+        return MessageResponse(message=f"User '{member_res.data[0]['username']}' removed from the team")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to remove team member: {str(exc)}")
 
 
 @router.delete("/users/{id}", response_model=MessageResponse)
@@ -316,7 +392,17 @@ async def list_admin_teams(
     res = supabase.table("teams").select(
         "id, name, invite_code, captain_id, created_at, profiles!fk_teams_captain(username)"
     ).order("created_at", desc=True).execute()
-    return res.data or []
+    teams = res.data or []
+    profiles_res = supabase.table("profiles").select("id, username, team_id").not_.is_("team_id", "null").execute()
+    members_by_team: Dict[str, List[Dict[str, Any]]] = {}
+    for profile in profiles_res.data or []:
+        members_by_team.setdefault(str(profile["team_id"]), []).append({
+            "id": profile["id"],
+            "username": profile["username"]
+        })
+    for team in teams:
+        team["members"] = members_by_team.get(str(team["id"]), [])
+    return teams
 
 
 @router.post("/teams", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)

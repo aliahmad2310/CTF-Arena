@@ -104,7 +104,12 @@ function renderTeams(teams) {
             ${escapeHtml(captainName)}
           </a>
         </td>
-        <td><code class="text-cyan text-mono text-xs">${escapeHtml(t.invite_code)}</code></td>
+        <td>
+          <div class="text-xs" style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.5rem;">
+            ${(t.members || []).map((member) => `<span class="badge badge-grey">${escapeHtml(member.username)} <button type="button" class="remove-member-btn" aria-label="Remove ${escapeHtml(member.username)} from ${escapeHtml(t.name)}" data-team-id="${t.id}" data-user-id="${member.id}" data-username="${escapeHtml(member.username)}" style="border:0;background:transparent;color:inherit;cursor:pointer;">Remove</button></span>`).join("") || `<span class="text-dim">No members</span>`}
+          </div>
+          <button type="button" class="btn btn-xs btn-outline add-member-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}">Add member</button>
+        </td>
         <td class="text-dim text-mono text-xs">${formatDate(t.created_at)}</td>
         <td style="text-align: right; white-space: nowrap;">
           <button type="button" class="btn btn-sm btn-secondary reset-score-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}">
@@ -119,6 +124,54 @@ function renderTeams(teams) {
   });
 
   tbody.innerHTML = html;
+
+  tbody.querySelectorAll(".add-member-btn").forEach((btn) => {
+    btn.onclick = () => {
+      const teamId = btn.getAttribute("data-id");
+      const teamName = btn.getAttribute("data-name");
+      showModal({
+        title: `Add member to ${teamName}`,
+        contentHtml: `
+          <div class="form-group">
+            <label class="form-label" for="member-username">Username</label>
+            <input type="text" id="member-username" class="form-input form-input-mono" required minlength="3" maxlength="30" autocomplete="off">
+          </div>
+        `,
+        confirmText: "Add Member",
+        onConfirm: async () => {
+          const username = document.getElementById("member-username").value.trim();
+          if (!username) {
+            showToast("Username is required", "error");
+            return false;
+          }
+          try {
+            await api.post(`/admin/teams/${teamId}/members`, { username });
+            showToast(`User '${username}' added to '${teamName}'`, "success");
+            await loadTeams();
+            return true;
+          } catch (err) {
+            showToast(err.message || "Failed to add member", "error");
+            return false;
+          }
+        }
+      });
+    };
+  });
+
+  tbody.querySelectorAll(".remove-member-btn").forEach((btn) => {
+    btn.onclick = async () => {
+      const teamId = btn.getAttribute("data-team-id");
+      const userId = btn.getAttribute("data-user-id");
+      const username = btn.getAttribute("data-username");
+      try {
+        await api.delete(`/admin/teams/${teamId}/members/${userId}`);
+        showToast(`User '${username}' removed from the team`, "success");
+        await loadTeams();
+      } catch (err) {
+        showToast(err.message || "Failed to remove member", "error");
+      }
+    };
+  });
 
   // Bind reset score
   tbody.querySelectorAll(".reset-score-btn").forEach((btn) => {
