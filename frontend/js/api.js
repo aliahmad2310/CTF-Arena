@@ -50,12 +50,15 @@ export async function apiFetch(endpoint, options = {}) {
   // Handle HTTP Status Codes
   if (response.status === 401) {
     showToast("Session expired or unauthorized. Please log in again.", "error");
-    // Clear potentially corrupted session
-    setTimeout(() => {
-      if (!window.location.pathname.includes("login.html") && !window.location.pathname.includes("signup.html")) {
-        window.location.href = "/login.html";
-      }
-    }, 1500);
+    // Clear the local Supabase session before redirecting. Otherwise the login
+    // page sees the stale session and immediately sends the user back here.
+    const isAuthPage = /\/(login|signup)\.html$/.test(window.location.pathname);
+    if (!isAuthPage) {
+      const returnTo = window.location.pathname + window.location.search;
+      void supabase.auth.signOut({ scope: "local" }).finally(() => {
+        window.location.replace(`/login.html?redirect=${encodeURIComponent(returnTo)}`);
+      });
+    }
     throw new Error("Unauthorized");
   }
 

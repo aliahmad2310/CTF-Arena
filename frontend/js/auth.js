@@ -62,7 +62,10 @@ export async function requireAuth() {
 
   const profile = await getUserProfile();
   if (!profile) {
-    window.location.href = "/login.html";
+    // A valid Supabase session does not guarantee the API is reachable or that
+    // the profile request succeeded. Sending the user to login in this case
+    // creates a login -> dashboard -> login redirect loop.
+    showToast("Your session is active, but your profile could not be verified. Check the API connection and try again.", "error", 8000);
     throw new Error("Profile retrieval failed");
   }
 

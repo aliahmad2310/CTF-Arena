@@ -7,7 +7,14 @@
 import { supabase } from "../supabaseClient.js";
 import { showToast } from "../ui.js";
 import { initLayout } from "../layout.js";
-import { getSession } from "../auth.js";
+import { getSession, getUserProfile } from "../auth.js";
+
+function getSafeRedirectUrl() {
+  const requestedUrl = new URLSearchParams(window.location.search).get("redirect");
+  return requestedUrl && requestedUrl.startsWith("/") && !requestedUrl.startsWith("//")
+    ? requestedUrl
+    : "/dashboard.html";
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   await initLayout();
@@ -15,10 +22,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   // If already authenticated, redirect
   const session = await getSession();
   if (session) {
-    const params = new URLSearchParams(window.location.search);
-    const redirectUrl = params.get("redirect") || "/dashboard.html";
-    window.location.href = redirectUrl;
-    return;
+    // Only leave the login page when both Supabase auth and the API profile
+    // check succeed. A session alone can be stale or the API may be offline.
+    const profile = await getUserProfile();
+    if (profile) {
+      window.location.replace(getSafeRedirectUrl());
+      return;
+    }
+    showToast("Your session could not be verified. Check the API connection, then sign in again.", "error", 8000);
   }
 
   const form = document.getElementById("login-form");
@@ -45,8 +56,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       showToast("Authentication successful. Redirecting...", "success");
 
-      const params = new URLSearchParams(window.location.search);
-      const redirectUrl = params.get("redirect") || "/dashboard.html";
+      const redirectUrl = getSafeRedirectUrl();
 
       setTimeout(() => {
         window.location.href = redirectUrl;
