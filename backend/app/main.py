@@ -78,27 +78,45 @@ async def get_health():
     )
 
 
+import tempfile
 from pathlib import Path
 from fastapi import HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
-STORAGE_DIR = Path(__file__).resolve().parent.parent / "storage" / "labs"
-STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+def _get_local_storage_dir() -> Path:
+    base = Path(tempfile.gettempdir()) / "ctf_storage" / "labs"
+    try:
+        base.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    return base
 
 
 @app.get("/storage/labs/{filename}", tags=["System"])
 async def get_lab_storage_file(filename: str):
     """
-    Serves stored lab attachment files directly from the backend file storage.
+    Serves stored lab attachment files or redirects to Supabase storage.
     """
     safe_filename = Path(filename).name
-    file_path = STORAGE_DIR / safe_filename
-    if not file_path.exists() or not file_path.is_file():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Requested lab artifact not found in storage"
-        )
-    return FileResponse(file_path, filename=safe_filename)
+    supabase = get_supabase_client()
+    try:
+        supabase_url = supabase.storage.from_("challenge-files").get_public_url(f"labs/{safe_filename}")
+        if supabase_url:
+            return RedirectResponse(url=supabase_url)
+    except Exception:
+        pass
+
+    storage_dir = _get_local_storage_dir()
+    file_path = storage_dir / safe_filename
+    if file_path.exists() and file_path.is_file():
+        return FileResponse(file_path, filename=safe_filename)
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Requested lab artifact not found in storage"
+    )
+
 
 
 

@@ -183,3 +183,15 @@ DROP POLICY IF EXISTS "Users can view own activity events" ON public.activity_ev
 CREATE POLICY "Users can view own activity events"
     ON public.activity_events FOR SELECT
     USING (user_id = auth.uid() OR public.is_admin());
+
+-- ------------------------------------------------------------------------------
+-- 15. storage.objects Policies (challenge-files bucket)
+-- Competitors and public users have SELECT (read/download) access only.
+-- INSERT, UPDATE, and DELETE are completely blocked for all client connections.
+-- Only the FastAPI backend (service_role) can upload, update, or delete files.
+-- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Public can read and download challenge files" ON storage.objects;
+CREATE POLICY "Public can read and download challenge files"
+    ON storage.objects FOR SELECT
+    USING (bucket_id = 'challenge-files');
+

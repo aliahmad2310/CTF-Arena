@@ -266,30 +266,29 @@ async def upload_room_attachment(
         await file.close()
 
     supabase = get_supabase_client()
-    from pathlib import Path
-    storage_dir = Path(__file__).resolve().parent.parent.parent / "storage" / "labs"
-    storage_dir.mkdir(parents=True, exist_ok=True)
+    storage_path = f"labs/{filename}"
+    safe_content_type = "application/octet-stream" if extension in {".zip", ".txt", ".pdf"} else (file.content_type or "application/octet-stream")
 
-    unique_id = uuid.uuid4().hex
-    safe_disk_filename = f"{unique_id}_{filename}"
-    disk_path = storage_dir / safe_disk_filename
-    with open(disk_path, "wb") as f:
-        f.write(content)
-
-    storage_path = f"labs/{unique_id}{extension}"
-    safe_content_type = "application/octet-stream" if extension in {".zip", ".txt", ".pdf"} else file.content_type
-    file_url = f"/storage/labs/{safe_disk_filename}"
     try:
         supabase.storage.from_("challenge-files").upload(
             storage_path,
             content,
-            {"content-type": safe_content_type, "cache-control": "3600", "upsert": "false"},
+            {"content-type": safe_content_type, "cache-control": "3600", "upsert": "true"},
         )
-        remote_url = supabase.storage.from_("challenge-files").get_public_url(storage_path)
-        if remote_url:
-            file_url = remote_url
+        file_url = supabase.storage.from_("challenge-files").get_public_url(storage_path)
     except Exception as exc:
-        logger.warning("Supabase storage upload skipped or failed, using local backend storage: %s", exc)
+        logger.warning("Supabase storage upload failed: %s", exc)
+        try:
+            from app.main import _get_local_storage_dir
+            disk_dir = _get_local_storage_dir()
+            with open(disk_dir / filename, "wb") as f:
+                f.write(content)
+            file_url = f"/storage/labs/{filename}"
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to upload to challenge-files bucket: {str(exc)}"
+            )
 
     return {"file_url": file_url, "file_name": filename, "file_path": storage_path}
 
