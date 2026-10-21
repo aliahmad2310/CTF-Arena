@@ -18,14 +18,16 @@ function getSafeRedirectUrl() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  await initLayout();
+  // Do not call the protected /me endpoint just to draw the login page. A stale
+  // browser session otherwise produces an alarming 401 toast before login.
+  await initLayout({ skipProfile: true });
 
   // If already authenticated, redirect
   const session = await getSession();
   if (session) {
     // Only leave the login page when both Supabase auth and the API profile
     // check succeed. A session alone can be stale or the API may be offline.
-    const profile = await getUserProfile();
+    const profile = await getUserProfile(false, true);
     if (profile) {
       window.location.replace(getSafeRedirectUrl());
       return;
@@ -43,13 +45,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const password = document.getElementById("password").value;
 
     submitBtn.disabled = true;
-    submitBtn.textContent = "Verifying Credentials...";
+    submitBtn.textContent = "Logging in...";
 
     try {
       const data = await api.post("/auth/login", {
         username,
         password
-      });
+      }, { suppressAuthErrors: true });
 
       const { error: sessionError } = await supabase.auth.setSession({
         access_token: data.access_token,
@@ -67,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = "Login";
-      showToast(err.message || "Invalid email or password", "error");
+      showToast(err.message || "Invalid username or password", "error");
     }
   });
 });

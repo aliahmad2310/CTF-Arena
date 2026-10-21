@@ -17,7 +17,8 @@ import { showToast } from "./ui.js";
  */
 export async function apiFetch(endpoint, options = {}) {
   const url = `${CONFIG.API_BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
-  const headers = new Headers(options.headers || {});
+  const { suppressAuthErrors = false, ...requestOptions } = options;
+  const headers = new Headers(requestOptions.headers || {});
 
   // Retrieve current active session token from Supabase client
   try {
@@ -30,12 +31,12 @@ export async function apiFetch(endpoint, options = {}) {
   }
 
   // Set default content type if payload present and not multipart/form-data
-  if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
+  if (requestOptions.body && !(requestOptions.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
   const config = {
-    ...options,
+    ...requestOptions,
     headers
   };
 
@@ -49,8 +50,7 @@ export async function apiFetch(endpoint, options = {}) {
 
   // Handle HTTP Status Codes
   if (response.status === 401) {
-    showToast("Session expired or unauthorized. Please log in again.", "error");
-    // Clear the local Supabase session before redirecting. Otherwise the login
+    if (!suppressAuthErrors) showToast("Session expired or unauthorized. Please log in again.", "error");
     // page sees the stale session and immediately sends the user back here.
     const isAuthPage = /\/login(?:\.html)?\/?$/.test(window.location.pathname);
     if (!isAuthPage) {
@@ -59,13 +59,14 @@ export async function apiFetch(endpoint, options = {}) {
         window.location.replace(`/login.html?redirect=${encodeURIComponent(returnTo)}`);
       });
     }
-    throw new Error("Unauthorized");
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.detail || "Unauthorized");
   }
 
   if (response.status === 403) {
     const errData = await response.json().catch(() => ({}));
     const message = errData.detail || "Access forbidden. Insufficient permissions.";
-    showToast(message, "error");
+    if (!suppressAuthErrors) showToast(message, "error");
     throw new Error(message);
   }
 
@@ -90,7 +91,7 @@ export async function apiFetch(endpoint, options = {}) {
 }
 
 export const api = {
-  get: (path, params) => {
+  get: (path, params, options = {}) => {
     let url = path;
     if (params) {
       const search = new URLSearchParams();
@@ -102,10 +103,11 @@ export const api = {
       const qs = search.toString();
       if (qs) url += (url.includes("?") ? "&" : "?") + qs;
     }
-    return apiFetch(url, { method: "GET" });
+    return apiFetch(url, { ...options, method: "GET" });
   },
 
-  post: (path, body) => apiFetch(path, {
+  post: (path, body, options = {}) => apiFetch(path, {
+    ...options,
     method: "POST",
     body: body instanceof FormData ? body : JSON.stringify(body)
   }),

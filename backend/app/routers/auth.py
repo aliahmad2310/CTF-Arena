@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import logging
 from typing import Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from supabase import create_client
@@ -25,6 +26,12 @@ router = APIRouter(prefix="", tags=["User Profile & Authentication"])
 @limiter.limit("10/minute")
 async def login_with_username(request: Request, payload: UsernameLoginRequest):
     """Authenticates a username/password pair without exposing the account email."""
+    if not settings.SUPABASE_ANON_KEY or settings.SUPABASE_ANON_KEY.startswith("placeholder-"):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Username login is not configured on the server. Contact the administrator."
+        )
+
     supabase = get_supabase_client()
     try:
         profile_res = supabase.table("profiles").select("id, is_banned").eq(
@@ -61,8 +68,16 @@ async def login_with_username(request: Request, payload: UsernameLoginRequest):
         )
     except HTTPException:
         raise
-    except Exception:
+    except Exception as exc:
         # Return the same response for unknown users and bad credentials.
+        # Log operational details server-side without exposing account data.
+        logging.getLogger("ctf-arena.auth").exception("Username login failed: %s", exc)
+        error_text = str(exc).lower()
+        if "api key" in error_text or "supabase_anon_key" in error_text:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Username login is not configured on the server. Contact the administrator."
+            )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 
 

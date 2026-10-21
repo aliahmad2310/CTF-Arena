@@ -28,7 +28,7 @@ export async function getSession() {
  * @param {boolean} forceRefresh
  * @returns {Promise<Object|null>}
  */
-export async function getUserProfile(forceRefresh = false) {
+export async function getUserProfile(forceRefresh = false, silent = false) {
   if (cachedProfile && !forceRefresh) return cachedProfile;
 
   const session = await getSession();
@@ -38,11 +38,11 @@ export async function getUserProfile(forceRefresh = false) {
   }
 
   try {
-    const profile = await api.get("/me");
+    const profile = await api.get("/me", undefined, silent ? { suppressAuthErrors: true } : undefined);
     cachedProfile = profile;
     return profile;
   } catch (err) {
-    console.error("Failed to load user profile:", err);
+    if (!silent) console.error("Failed to load user profile:", err);
     return null;
   }
 }

@@ -12,9 +12,9 @@ import { CONFIG } from "./config.js";
 /**
  * Initializes and mounts the common navigation bar and footer.
  */
-export async function initLayout() {
+export async function initLayout({ skipProfile = false } = {}) {
   mountCircuitBackground();
-  const profile = await getUserProfile();
+  const profile = skipProfile ? null : await getUserProfile();
   renderNavbar(profile);
   renderFooter();
 
@@ -92,7 +92,7 @@ function renderNavbar(profile) {
               </button>
             </div>
           ` : `
-            <a href="/login.html" class="btn btn-sm btn-secondary">Login</a>
+            <a href="/login.html" class="btn btn-primary btn-lg">Login</a>
           `}
         </div>
       </div>
