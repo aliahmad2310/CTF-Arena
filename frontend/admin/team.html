@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Progress Audit - CTF Arena</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+  <div id="admin-subnav-root"></div>
+  <main class="site-main container">
+    <div style="margin-bottom:var(--space-6);">
+      <a href="/leaderboard.html" class="text-mono text-xs text-dim">Back to leaderboard</a>
+      <h1 id="team-title" style="font-size:var(--text-3xl);margin:var(--space-2) 0;">Loading team audit</h1>
+      <p id="team-summary" class="text-dim">Team activity and lab completion status</p>
+    </div>
+    <section class="card" style="margin-bottom:var(--space-6);">
+      <div class="card-header"><h2 style="margin:0;font-size:var(--text-base);">Members and Current Activity</h2></div>
+      <div class="table-container"><table class="data-table"><thead><tr><th>User</th><th>Status</th><th>Current Lab</th><th>Current Challenge</th></tr></thead><tbody id="team-members-body"><tr><td colspan="4">Loading members...</td></tr></tbody></table></div>
+    </section>
+    <section class="card">
+      <div class="card-header"><h2 style="margin:0;font-size:var(--text-base);">Team Lab Progress</h2></div>
+      <div class="table-container"><table class="data-table"><thead><tr><th>Lab</th><th>Status</th><th>Team Solves</th><th>Team Points</th></tr></thead><tbody id="team-labs-body"><tr><td colspan="4">Loading lab progress...</td></tr></tbody></table></div>
+    </section>
+  </main>
+  <div id="footer-root"></div>
+  <script type="module" src="/js/admin/team.js"></script>
+</body>
+</html>

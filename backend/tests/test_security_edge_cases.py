@@ -4,7 +4,11 @@ from unittest.mock import MagicMock
 from fastapi import HTTPException
 
 from app.core.security import verify_supabase_jwt, compute_flag_hash, verify_flag
-from app.services.flag_service import check_ctf_submission_eligibility
+from app.services.flag_service import check_ctf_submission_eligibility, process_flag_submission
+from app.routers.hints import unlock_hint
+from app.routers.admin import _safe_attachment_name, _validate_attachment
+from app.models.admin import AdminTeamCreateRequest, AdminTeamCapacityRequest, AdminCtfSettingsUpdateRequest
+from app.services.team_service import enforce_team_capacity
 import jwt
 from app.core.config import settings
 
@@ -128,3 +132,67 @@ def test_multi_team_isolation_integrity():
     # Bravo teammate attempting ch_02 is valid and receives first credit for Bravo
     is_bravo_first_solve = "ch_02" not in team_bravo_solves.get("team_bravo", [])
     assert is_bravo_first_solve is True
+
+
+@pytest.mark.asyncio
+async def test_admin_flag_submission_is_rejected_before_database_access():
+    """Admin users must not create submissions, solves, or lab progress."""
+    with pytest.raises(HTTPException) as exc_info:
+        await process_flag_submission(
+            challenge_id="challenge-id",
+            submitted_flag="CTF{admin_test}",
+            user={"id": "admin-id", "role": "admin", "team_id": "team-id"},
+        )
+
+    assert exc_info.value.status_code == 403
+    assert "cannot submit flags" in exc_info.value.detail.lower()
+
+
+@pytest.mark.asyncio
+async def test_admin_hint_unlock_is_rejected_before_database_access():
+    """Admin users must not incur score deductions by unlocking hints."""
+    with pytest.raises(HTTPException) as exc_info:
+        await unlock_hint(
+            id=__import__("uuid").uuid4(),
+            current_user={"id": "admin-id", "role": "admin", "team_id": "team-id"},
+        )
+
+    assert exc_info.value.status_code == 403
+    assert "cannot unlock hints" in exc_info.value.detail.lower()
+
+
+def test_attachment_allowlist_accepts_inert_python_source_and_images():
+    assert _validate_attachment("task.py", "text/x-python") == ".py"
+    assert _validate_attachment("evidence.png", "image/png") == ".png"
+
+
+def test_attachment_allowlist_rejects_executable_and_mismatched_types():
+    with pytest.raises(HTTPException) as exc_info:
+        _validate_attachment("payload.exe", "application/octet-stream")
+    assert exc_info.value.status_code == 415
+
+    with pytest.raises(HTTPException) as exc_info:
+        _validate_attachment("image.png", "text/html")
+    assert exc_info.value.status_code == 415
+
+
+def test_attachment_name_discards_client_path_components():
+    assert _safe_attachment_name(r"..\..\private\proof.py") == "proof.py"
+
+
+def test_admin_team_capacity_validation_and_enforcement():
+    assert AdminTeamCreateRequest(name="Team Alpha", max_members=8).max_members == 8
+    assert AdminTeamCapacityRequest(max_members=1).max_members == 1
+    with pytest.raises(ValueError):
+        AdminTeamCreateRequest(name="Team Alpha", max_members=0)
+    with pytest.raises(HTTPException) as exc_info:
+        enforce_team_capacity(member_count=4, max_members=4)
+    assert exc_info.value.status_code == 409
+    enforce_team_capacity(member_count=3, max_members=4)
+
+
+def test_competition_settings_reject_end_before_start():
+    start = datetime(2026, 10, 21, tzinfo=timezone.utc)
+    end = datetime(2026, 10, 20, tzinfo=timezone.utc)
+    with pytest.raises(ValueError, match="end time must be after"):
+        AdminCtfSettingsUpdateRequest(start_time=start, end_time=end)

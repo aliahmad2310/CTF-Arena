@@ -10,6 +10,7 @@ from app.models.monitor import (
     MatrixCell
 )
 from app.services.monitor_service import stream_users_csv, stream_matrix_csv
+from app.models.monitor import AdminTeamProgressListResponse, AdminTeamProgressListItem, AdminTeamDetailResponse
 
 
 def test_sanitize_csv_cell_formula_injection():
@@ -105,3 +106,31 @@ def test_stream_matrix_csv_generation():
     assert "'@danger_team" in row
     assert "completed" in row
     assert "3/3" in row
+
+
+def test_admin_team_progress_response_contains_current_and_completed_labs():
+    team_id = uuid4()
+    item = AdminTeamProgressListItem(
+        team_id=team_id,
+        team_name="Blue Team",
+        rank=1,
+        score=900,
+        team_score=900,
+        solves_count=4,
+        member_count=3,
+        max_members=5,
+        members_online=2,
+        current_labs=["Web Basics"],
+        completed_labs=["Intro Crypto"],
+    )
+    response = AdminTeamProgressListResponse(total=1, page=1, page_size=50, teams=[item])
+    assert response.teams[0].current_labs == ["Web Basics"]
+    assert response.teams[0].completed_labs == ["Intro Crypto"]
+    assert response.teams[0].max_members == 5
+
+
+def test_admin_team_detail_response_validates_roster_and_lab_records():
+    team_id = uuid4()
+    response = AdminTeamDetailResponse(team_id=team_id, team_name="Red Team", max_members=4)
+    assert response.members == []
+    assert response.labs == []

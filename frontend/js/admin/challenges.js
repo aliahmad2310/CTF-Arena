@@ -85,7 +85,7 @@ function renderChallenges(challenges) {
         </td>
         <td style="text-align: right; white-space: nowrap;">
           <button type="button" class="btn btn-sm btn-secondary edit-ch-btn" data-id="${ch.id}">
-            Edit / Flag
+            Edit / Flag / Files
           </button>
           <button type="button" class="btn btn-sm btn-danger delete-ch-btn" data-id="${ch.id}" data-title="${escapeHtml(ch.title)}">
             Delete
@@ -102,7 +102,7 @@ function renderChallenges(challenges) {
     btn.onclick = () => {
       const chId = btn.getAttribute("data-id");
       const ch = challengesList.find(c => c.id === chId);
-      if (ch) openEditModal(ch);
+      if (ch) void openEditModal(ch);
     };
   });
 
@@ -185,6 +185,11 @@ function initCreateButton() {
             <label class="form-label" for="mc-desc">Description (Markdown Supported)</label>
             <textarea id="mc-desc" class="form-textarea" rows="4" placeholder="Analyze the vulnerable service running on the target port..."></textarea>
           </div>
+          <div class="form-group">
+            <label class="form-label" for="mc-files">Attachments</label>
+            <input type="file" id="mc-files" class="form-input" multiple accept=".png,.jpg,.jpeg,.gif,.webp,.txt,.py,.md,.pdf,.zip">
+            <div class="form-helper">Images, text, Python scripts, PDFs, and ZIP files; maximum 10 MiB each. Files are stored inertly and never executed by the server.</div>
+          </div>
           <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
             <input type="checkbox" id="mc-published" checked>
             <label for="mc-published" class="text-sm">Publish immediately</label>
@@ -203,10 +208,12 @@ function initCreateButton() {
         const description = document.getElementById("mc-desc").value.trim();
         const is_published = document.getElementById("mc-published").checked;
 
-        await api.post("/admin/challenges", {
+        const created = await api.post("/admin/challenges", {
           room_id, title, category, points, difficulty, flag, external_link, description, is_published,
           is_case_sensitive: true, display_order: 1
         });
+
+        await uploadAttachments(created.challenge_id, document.getElementById("mc-files").files);
 
         showToast(`Challenge '${title}' created successfully`, "success");
         await loadChallenges();
@@ -215,7 +222,22 @@ function initCreateButton() {
   };
 }
 
-function openEditModal(ch) {
+async function uploadAttachments(challengeId, files) {
+  for (const file of files || []) {
+    const form = new FormData();
+    form.append("file", file);
+    await api.post(`/admin/challenges/${challengeId}/files`, form);
+  }
+}
+
+async function openEditModal(ch) {
+  let attachments = [];
+  try {
+    attachments = await api.get(`/admin/challenges/${ch.id}/files`);
+  } catch (err) {
+    showToast(err.message || "Unable to load challenge attachments", "error");
+    return;
+  }
   showModal({
     title: `Edit Challenge: ${ch.title}`,
     contentHtml: `
@@ -248,6 +270,12 @@ function openEditModal(ch) {
           <input type="text" id="ec-flag" class="form-input form-input-mono text-green" placeholder="CTF{new_flag_string_here}">
           <div class="form-helper">Entering a new flag will re-hash and overwrite the stored salt and hash.</div>
         </div>
+        <div class="form-group">
+          <label class="form-label" for="ec-files">Add Attachments</label>
+          <input type="file" id="ec-files" class="form-input" multiple accept=".png,.jpg,.jpeg,.gif,.webp,.txt,.py,.md,.pdf,.zip">
+          <div class="form-helper">Maximum 10 MiB each. Files are stored inertly and never executed by the server.</div>
+          <div class="text-sm" style="margin-top:0.75rem;">Existing files: ${attachments.length ? attachments.map((file) => `<div class="attachment-admin-row" style="display:flex;justify-content:space-between;gap:0.5rem;padding:0.35rem 0;"><span>${escapeHtml(file.file_name)} (${Math.ceil(file.file_size / 1024)} KB)</span><button class="btn btn-xs btn-danger remove-attachment-btn" type="button" data-file-id="${file.id}">Remove</button></div>`).join("") : "None"}</div>
+        </div>
         <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
           <input type="checkbox" id="ec-published" ${ch.is_published ? "checked" : ""}>
           <label for="ec-published" class="text-sm">Published (visible to competitors)</label>
@@ -268,8 +296,21 @@ function openEditModal(ch) {
       }
 
       await api.patch(`/admin/challenges/${ch.id}`, payload);
+      await uploadAttachments(ch.id, document.getElementById("ec-files").files);
       showToast("Challenge updated successfully", "success");
       await loadChallenges();
     }
+  });
+
+  document.querySelectorAll(".remove-attachment-btn").forEach((button) => {
+    button.onclick = async () => {
+      try {
+        await api.delete(`/admin/challenges/${ch.id}/files/${button.dataset.fileId}`);
+        button.closest(".attachment-admin-row").remove();
+        showToast("Attachment removed", "info");
+      } catch (err) {
+        showToast(err.message || "Could not remove attachment", "error");
+      }
+    };
   });
 }

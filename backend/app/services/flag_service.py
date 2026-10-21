@@ -53,6 +53,12 @@ async def process_flag_submission(
     Evaluates a submitted flag against salted hash, checks duplicate solves,
     awards first blood, updates lab progress, and logs audit events.
     """
+    if user.get("role") != "user":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrative accounts cannot submit flags or earn competition points."
+        )
+
     supabase = get_supabase_client()
     user_id = str(user["id"])
     team_id = str(user.get("team_id")) if user.get("team_id") else None

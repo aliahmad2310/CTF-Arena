@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.deps import get_current_user
 from app.db.client import get_supabase_client
+from app.services.team_service import enforce_team_capacity
 from app.models.team import (
     TeamCreateRequest,
     TeamUpdateRequest,
@@ -98,11 +99,14 @@ async def create_team(
     invite_code = generate_invite_code()
 
     try:
+        settings_res = supabase.table("ctf_settings").select("max_team_size").eq("id", 1).limit(1).execute()
+        default_team_capacity = settings_res.data[0].get("max_team_size", 4) if settings_res.data else 4
         # Create team record
         team_insert_res = supabase.table("teams").insert({
             "name": team_name,
             "invite_code": invite_code,
-            "captain_id": user_id
+            "captain_id": user_id,
+            "max_members": default_team_capacity,
         }).execute()
 
         if not team_insert_res.data or len(team_insert_res.data) == 0:
@@ -120,9 +124,7 @@ async def create_team(
             "updated_at": datetime.now(timezone.utc).isoformat()
         }).eq("id", user_id).execute()
 
-        # Query max team size setting
-        settings_res = supabase.table("ctf_settings").select("max_team_size").eq("id", 1).limit(1).execute()
-        max_size = settings_res.data[0].get("max_team_size", 4) if settings_res.data else 4
+        max_size = new_team.get("max_members", 4)
 
         member_item = TeamMemberItem(
             id=user_id,
@@ -198,14 +200,14 @@ async def join_team(
         count_res = supabase.table("profiles").select("id", count="exact").eq("team_id", team_id).execute()
         current_members_count = count_res.count or 0
 
-        settings_res = supabase.table("ctf_settings").select("max_team_size").eq("id", 1).limit(1).execute()
-        max_size = settings_res.data[0].get("max_team_size", 4) if settings_res.data else 4
-
-        if current_members_count >= max_size:
+        max_size = team.get("max_members", 4)
+        try:
+            enforce_team_capacity(current_members_count, max_size)
+        except HTTPException as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Team '{team['name']}' has reached its maximum capacity of {max_size} members."
-            )
+                detail=f"Team '{team['name']}' has reached its maximum capacity of {max_size} members.",
+            ) from exc
 
         # Associate competitor with team
         supabase.table("profiles").update({
@@ -315,8 +317,7 @@ async def get_my_team(current_user: Dict[str, Any] = Depends(get_current_user)):
         team = team_res.data[0]
         members, team_score, team_rank = await get_team_members_and_stats(supabase, team_id)
 
-        settings_res = supabase.table("ctf_settings").select("max_team_size").eq("id", 1).limit(1).execute()
-        max_size = settings_res.data[0].get("max_team_size", 4) if settings_res.data else 4
+        max_size = team.get("max_members", 4)
 
         return TeamDetailResponse(
             id=team["id"],
@@ -348,7 +349,7 @@ async def get_public_team(id: UUID):
     team_id = str(id)
 
     try:
-        team_res = supabase.table("teams").select("id, name, captain_id, created_at").eq("id", team_id).limit(1).execute()
+        team_res = supabase.table("teams").select("id, name, captain_id, max_members, created_at").eq("id", team_id).limit(1).execute()
         if not team_res.data or len(team_res.data) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -365,6 +366,7 @@ async def get_public_team(id: UUID):
             score=team_score,
             rank=team_rank,
             member_count=len(members),
+            max_team_size=team.get("max_members", 4),
             created_at=team["created_at"],
             members=members
         )

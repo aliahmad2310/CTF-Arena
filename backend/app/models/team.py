@@ -57,5 +57,6 @@ class PublicTeamResponse(BaseModel):
     score: int = 0
     rank: Optional[int] = None
     member_count: int = 0
+    max_team_size: int = 4
     created_at: datetime
     members: List[TeamMemberItem] = []

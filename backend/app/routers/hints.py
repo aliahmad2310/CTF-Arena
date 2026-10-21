@@ -18,6 +18,12 @@ async def unlock_hint(
     """
     Unlocks an intelligence hint for a challenge, deducting penalty points on the scoreboard.
     """
+    if current_user.get("role") != "user":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrative accounts cannot unlock hints or affect competition scoring."
+        )
+
     supabase = get_supabase_client()
     hint_id = str(id)
     user_id = str(current_user["id"])

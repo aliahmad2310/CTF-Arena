@@ -2,16 +2,19 @@ import secrets
 from typing import Dict, Any, List, Optional
 from uuid import UUID
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 
 from app.core.deps import require_admin
 from app.db.client import get_supabase_client
 from app.core.security import compute_flag_hash
+from app.services.team_service import enforce_team_capacity
 from app.models.common import MessageResponse, CtfStatusResponse
 from app.models.admin import (
     AdminRoomCreateRequest,
     AdminRoomUpdateRequest,
     AdminChallengeCreateRequest,
+    AdminChallengeCreatedResponse,
+    AdminChallengeFileItem,
     AdminChallengeUpdateRequest,
     AdminHintCreateRequest,
     AdminHintUpdateRequest,
@@ -20,10 +23,45 @@ from app.models.admin import (
     AdminUserCreateRequest,
     AdminUserResetPasswordRequest,
     AdminTeamCreateRequest,
+    AdminTeamCapacityRequest,
     AdminTeamMemberRequest
 )
 
 router = APIRouter(prefix="/admin", tags=["Admin Content Management"])
+
+MAX_CHALLENGE_FILE_BYTES = 10 * 1024 * 1024
+ALLOWED_CHALLENGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".txt", ".py", ".md", ".pdf", ".zip"}
+CHALLENGE_FILE_CONTENT_TYPES = {
+    ".png": {"image/png"},
+    ".jpg": {"image/jpeg"},
+    ".jpeg": {"image/jpeg"},
+    ".gif": {"image/gif"},
+    ".webp": {"image/webp"},
+    ".txt": {"text/plain", "application/octet-stream"},
+    ".py": {"text/x-python", "text/plain", "application/octet-stream"},
+    ".md": {"text/markdown", "text/plain", "application/octet-stream"},
+    ".pdf": {"application/pdf"},
+    ".zip": {"application/zip", "application/x-zip-compressed", "application/octet-stream"},
+}
+
+
+def _safe_attachment_name(filename: str) -> str:
+    """Return a basename only; never trust a client-provided storage path."""
+    from pathlib import PurePath
+
+    return PurePath((filename or "attachment").replace("\\", "/")).name[:180] or "attachment"
+
+
+def _validate_attachment(filename: str, content_type: Optional[str]) -> str:
+    """Validate the declared attachment type and return its normalized extension."""
+    from pathlib import PurePath
+
+    extension = PurePath(filename).suffix.lower()
+    if extension not in ALLOWED_CHALLENGE_EXTENSIONS:
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported attachment file type")
+    if content_type not in CHALLENGE_FILE_CONTENT_TYPES[extension]:
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Attachment content type does not match its file type")
+    return extension
 
 
 # ==============================================================================
@@ -73,6 +111,13 @@ async def delete_room(
 ):
     supabase = get_supabase_client()
     try:
+        challenge_rows = supabase.table("challenges").select("id").eq("room_id", str(id)).execute().data or []
+        challenge_ids = [row["id"] for row in challenge_rows]
+        if challenge_ids:
+            file_rows = supabase.table("challenge_files").select("file_path").in_("challenge_id", challenge_ids).execute().data or []
+            paths = [row["file_path"] for row in file_rows]
+            if paths:
+                supabase.storage.from_("challenge-files").remove(paths)
         supabase.table("rooms").delete().eq("id", str(id)).execute()
         return MessageResponse(message="Lab deleted successfully")
     except Exception as exc:
@@ -93,7 +138,7 @@ async def list_all_admin_challenges(
     return res.data or []
 
 
-@router.post("/challenges", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/challenges", response_model=AdminChallengeCreatedResponse, status_code=status.HTTP_201_CREATED)
 async def create_challenge(
     payload: AdminChallengeCreateRequest,
     admin: Dict[str, Any] = Depends(require_admin)
@@ -122,9 +167,86 @@ async def create_challenge(
             "created_at": ch_data["created_at"]
         }).execute()
 
-        return MessageResponse(message=f"Challenge '{payload.title}' initialized with hashed flag")
+        return AdminChallengeCreatedResponse(
+            message=f"Challenge '{payload.title}' initialized with hashed flag",
+            challenge_id=challenge_id,
+        )
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Challenge creation failed: {str(exc)}")
+
+
+@router.post("/challenges/{id}/files", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+async def upload_challenge_attachment(
+    id: UUID,
+    file: UploadFile = File(...),
+    admin: Dict[str, Any] = Depends(require_admin),
+):
+    """Store a bounded, allowlisted attachment as inert bytes in private Supabase Storage."""
+    import uuid
+
+    try:
+        filename = _safe_attachment_name(file.filename or "attachment")
+        extension = _validate_attachment(filename, file.content_type)
+        content = await file.read(MAX_CHALLENGE_FILE_BYTES + 1)
+        if not content:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Attachment is empty")
+        if len(content) > MAX_CHALLENGE_FILE_BYTES:
+            raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Attachment exceeds the 10 MiB limit")
+    finally:
+        await file.close()
+
+    supabase = get_supabase_client()
+    challenge = supabase.table("challenges").select("id").eq("id", str(id)).limit(1).execute()
+    if not challenge.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Challenge not found")
+
+    storage_path = f"{id}/{uuid.uuid4().hex}{extension}"
+    safe_content_type = "application/octet-stream" if extension in {".py", ".txt", ".md", ".zip"} else file.content_type
+    try:
+        supabase.storage.from_("challenge-files").upload(
+            storage_path,
+            content,
+            {"content-type": safe_content_type, "cache-control": "3600", "upsert": "false"},
+        )
+        supabase.table("challenge_files").insert({
+            "challenge_id": str(id),
+            "file_name": filename,
+            "file_path": storage_path,
+            "file_size": len(content),
+        }).execute()
+    except Exception as exc:
+        try:
+            supabase.storage.from_("challenge-files").remove([storage_path])
+        except Exception:
+            pass
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Attachment could not be saved") from exc
+    return MessageResponse(message="Attachment uploaded as a non-executable file")
+
+
+@router.get("/challenges/{id}/files", response_model=List[AdminChallengeFileItem])
+async def list_challenge_attachments(id: UUID, admin: Dict[str, Any] = Depends(require_admin)):
+    supabase = get_supabase_client()
+    result = supabase.table("challenge_files").select("id, file_name, file_size").eq("challenge_id", str(id)).order("created_at").execute()
+    return result.data or []
+
+
+@router.delete("/challenges/{id}/files/{file_id}", response_model=MessageResponse)
+async def delete_challenge_attachment(
+    id: UUID,
+    file_id: UUID,
+    admin: Dict[str, Any] = Depends(require_admin),
+):
+    supabase = get_supabase_client()
+    result = supabase.table("challenge_files").select("file_path").eq("id", str(file_id)).eq("challenge_id", str(id)).limit(1).execute()
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment file not found")
+    file_path = result.data[0]["file_path"]
+    try:
+        supabase.storage.from_("challenge-files").remove([file_path])
+        supabase.table("challenge_files").delete().eq("id", str(file_id)).eq("challenge_id", str(id)).execute()
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Attachment could not be deleted") from exc
+    return MessageResponse(message="Attachment deleted")
 
 
 @router.patch("/challenges/{id}", response_model=MessageResponse)
@@ -169,6 +291,10 @@ async def delete_challenge(
 ):
     supabase = get_supabase_client()
     try:
+        file_rows = supabase.table("challenge_files").select("file_path").eq("challenge_id", str(id)).execute().data or []
+        paths = [row["file_path"] for row in file_rows]
+        if paths:
+            supabase.storage.from_("challenge-files").remove(paths)
         supabase.table("challenges").delete().eq("id", str(id)).execute()
         return MessageResponse(message="Challenge deleted successfully")
     except Exception as exc:
@@ -245,14 +371,12 @@ async def admin_create_user(
 
         if payload.team_id:
             team_id = str(payload.team_id)
-            team_res = supabase.table("teams").select("id").eq("id", team_id).limit(1).execute()
+            team_res = supabase.table("teams").select("id, max_members").eq("id", team_id).limit(1).execute()
             if not team_res.data:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
-            settings_res = supabase.table("ctf_settings").select("max_team_size").eq("id", 1).limit(1).execute()
-            max_size = settings_res.data[0].get("max_team_size", 4) if settings_res.data else 4
+            max_size = team_res.data[0].get("max_members", 4)
             members_res = supabase.table("profiles").select("id", count="exact").eq("team_id", team_id).execute()
-            if (members_res.count or 0) >= max_size:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Team has reached its maximum size")
+            enforce_team_capacity(members_res.count or 0, max_size)
 
         # Create user via Supabase Auth Admin API
         user_attributes = {
@@ -295,7 +419,7 @@ async def admin_add_team_member(
     supabase = get_supabase_client()
     team_id = str(id)
     try:
-        team_res = supabase.table("teams").select("id").eq("id", team_id).limit(1).execute()
+        team_res = supabase.table("teams").select("id, max_members, name").eq("id", team_id).limit(1).execute()
         if not team_res.data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
 
@@ -306,11 +430,10 @@ async def admin_add_team_member(
         if user.get("team_id") and str(user["team_id"]) != team_id:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already belongs to another team")
 
-        settings_res = supabase.table("ctf_settings").select("max_team_size").eq("id", 1).limit(1).execute()
-        max_size = settings_res.data[0].get("max_team_size", 4) if settings_res.data else 4
+        max_size = team_res.data[0].get("max_members", 4)
         members_res = supabase.table("profiles").select("id", count="exact").eq("team_id", team_id).execute()
-        if not user.get("team_id") and (members_res.count or 0) >= max_size:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Team has reached its maximum size")
+        if not user.get("team_id"):
+            enforce_team_capacity(members_res.count or 0, max_size)
 
         supabase.table("profiles").update({"team_id": team_id}).eq("id", str(user["id"])).execute()
         return MessageResponse(message=f"User '{payload.username}' added to the team")
@@ -391,7 +514,7 @@ async def list_admin_teams(
 ):
     supabase = get_supabase_client()
     res = supabase.table("teams").select(
-        "id, name, invite_code, captain_id, created_at, profiles!fk_teams_captain(username)"
+        "id, name, invite_code, captain_id, max_members, created_at, profiles!fk_teams_captain(username)"
     ).order("created_at", desc=True).execute()
     teams = res.data or []
     profiles_res = supabase.table("profiles").select("id, username, team_id").not_.is_("team_id", "null").execute()
@@ -426,7 +549,8 @@ async def admin_create_team(
         team_data = {
             "name": payload.name,
             "invite_code": invite_code,
-            "captain_id": captain_id
+            "captain_id": captain_id,
+            "max_members": payload.max_members,
         }
         res = supabase.table("teams").insert(team_data).execute()
         if captain_id and res.data and len(res.data) > 0:
@@ -440,6 +564,27 @@ async def admin_create_team(
         if "unique" in str(exc).lower():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A team with this name already exists")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create team: {str(exc)}")
+
+
+@router.patch("/teams/{id}/capacity", response_model=MessageResponse)
+async def update_team_capacity(
+    id: UUID,
+    payload: AdminTeamCapacityRequest,
+    admin: Dict[str, Any] = Depends(require_admin),
+):
+    supabase = get_supabase_client()
+    team_id = str(id)
+    team = supabase.table("teams").select("id, max_members").eq("id", team_id).limit(1).execute()
+    if not team.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+    members = supabase.table("profiles").select("id", count="exact").eq("team_id", team_id).execute()
+    if (members.count or 0) > payload.max_members:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Team currently has {members.count} members; capacity cannot be set below its current membership.",
+        )
+    supabase.table("teams").update({"max_members": payload.max_members, "updated_at": datetime.now(timezone.utc).isoformat()}).eq("id", team_id).execute()
+    return MessageResponse(message="Team capacity updated")
 
 
 @router.post("/teams/{id}/reset-score", response_model=MessageResponse)
@@ -512,7 +657,22 @@ async def update_admin_settings(
 ):
     supabase = get_supabase_client()
     updates = {}
-    for k, v in payload.model_dump().items():
+    patch_values = payload.model_dump(exclude_unset=True)
+    candidate_start = patch_values.get("start_time")
+    candidate_end = patch_values.get("end_time")
+    if "start_time" not in patch_values or "end_time" not in patch_values:
+        existing = supabase.table("ctf_settings").select("start_time, end_time").eq("id", 1).limit(1).execute()
+        current = existing.data[0] if existing.data else {}
+        if "start_time" not in patch_values:
+            raw_start = current.get("start_time")
+            candidate_start = datetime.fromisoformat(raw_start.replace("Z", "+00:00")) if raw_start else None
+        if "end_time" not in patch_values:
+            raw_end = current.get("end_time")
+            candidate_end = datetime.fromisoformat(raw_end.replace("Z", "+00:00")) if raw_end else None
+    if candidate_start and candidate_end and candidate_end <= candidate_start:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Competition end time must be after its start time")
+
+    for k, v in patch_values.items():
         if v is not None:
             if isinstance(v, datetime):
                 updates[k] = v.isoformat()

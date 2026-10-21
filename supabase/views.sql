@@ -18,6 +18,7 @@ WITH user_solves AS (
         COUNT(s.id)::INT AS solves_count,
         MAX(s.created_at) AS last_solve_at
     FROM public.solves s
+    JOIN public.profiles p ON p.id = s.user_id AND p.role = 'user'
     GROUP BY s.user_id
 ),
 user_hints AS (
@@ -25,6 +26,7 @@ user_hints AS (
         hu.user_id,
         COALESCE(SUM(hu.cost), 0)::INT AS hint_deductions
     FROM public.hint_unlocks hu
+    JOIN public.profiles p ON p.id = hu.user_id AND p.role = 'user'
     GROUP BY hu.user_id
 ),
 scored_users AS (
@@ -72,6 +74,7 @@ WITH team_solves AS (
         COUNT(DISTINCT s.challenge_id)::INT AS solves_count,
         MAX(s.created_at) AS last_solve_at
     FROM public.solves s
+    JOIN public.profiles p ON p.id = s.user_id AND p.role = 'user'
     WHERE s.team_id IS NOT NULL
     GROUP BY s.team_id
 ),
@@ -80,6 +83,7 @@ team_hints AS (
         hu.team_id,
         COALESCE(SUM(hu.cost), 0)::INT AS hint_deductions
     FROM public.hint_unlocks hu
+    JOIN public.profiles p ON p.id = hu.user_id AND p.role = 'user'
     WHERE hu.team_id IS NOT NULL
     GROUP BY hu.team_id
 ),
@@ -129,6 +133,7 @@ SELECT
 FROM public.solves s
 LEFT JOIN public.teams t ON t.id = s.team_id
 LEFT JOIN public.profiles p ON p.id = s.user_id
+WHERE p.role = 'user'
 ORDER BY s.created_at ASC;
 
 -- ------------------------------------------------------------------------------

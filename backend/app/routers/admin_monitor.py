@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 
 from app.core.deps import require_admin
@@ -13,7 +13,9 @@ from app.models.monitor import (
     UserDetailResponse,
     LabDetailMetricsResponse,
     MatrixResponse,
-    AlertItem
+    AlertItem,
+    AdminTeamProgressListResponse,
+    AdminTeamDetailResponse,
 )
 from app.services import monitor_service, alert_service
 
@@ -88,6 +90,25 @@ async def get_user_detail(
     unlocked hints, activity timeline, and remaining unsolved challenges.
     """
     return await monitor_service.get_user_detail_audit(user_id=str(user_id))
+
+
+@router.get("/teams", response_model=AdminTeamProgressListResponse)
+async def get_team_progress(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    _admin=Depends(require_admin),
+):
+    """Return ranked teams with their current and completed lab activity."""
+    return await monitor_service.get_team_progress_directory(page=page, page_size=page_size)
+
+
+@router.get("/teams/{team_id}", response_model=AdminTeamDetailResponse)
+async def get_team_detail(team_id: UUID, _admin=Depends(require_admin)):
+    """Return the team's members and aggregated per-lab progress."""
+    try:
+        return await monitor_service.get_team_detail_audit(team_id=str(team_id))
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found") from exc
 
 
 @router.get("/labs/{room_id}", response_model=LabDetailMetricsResponse)

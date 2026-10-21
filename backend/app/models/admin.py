@@ -1,7 +1,7 @@
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class AdminRoomCreateRequest(BaseModel):
@@ -38,6 +38,17 @@ class AdminChallengeCreateRequest(BaseModel):
     display_order: int = 0
     flag: str = Field(..., min_length=1)  # Plaintext flag will be hashed and never stored directly
     is_case_sensitive: bool = True
+
+
+class AdminChallengeCreatedResponse(BaseModel):
+    message: str
+    challenge_id: UUID
+
+
+class AdminChallengeFileItem(BaseModel):
+    id: UUID
+    file_name: str
+    file_size: int = Field(..., ge=0)
 
 
 class AdminChallengeUpdateRequest(BaseModel):
@@ -77,6 +88,12 @@ class AdminCtfSettingsUpdateRequest(BaseModel):
     max_team_size: Optional[int] = Field(None, ge=1)
     leaderboard_refresh_seconds: Optional[int] = Field(None, ge=0, le=3600)
 
+    @model_validator(mode="after")
+    def validate_time_order(self):
+        if self.start_time and self.end_time and self.end_time <= self.start_time:
+            raise ValueError("Competition end time must be after its start time")
+        return self
+
 
 class AdminUserBanRequest(BaseModel):
     is_banned: bool
@@ -97,6 +114,11 @@ class AdminUserResetPasswordRequest(BaseModel):
 class AdminTeamCreateRequest(BaseModel):
     name: str = Field(..., min_length=3, max_length=30)
     captain_username: Optional[str] = None
+    max_members: int = Field(4, ge=1, le=100)
+
+
+class AdminTeamCapacityRequest(BaseModel):
+    max_members: int = Field(..., ge=1, le=100)
 
 
 class AdminTeamMemberRequest(BaseModel):

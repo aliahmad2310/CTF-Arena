@@ -119,6 +119,59 @@ class UserDetailResponse(BaseModel):
     unsolved_challenges_remaining: int = 0
 
 
+class AdminTeamProgressMember(BaseModel):
+    user_id: UUID
+    username: str
+    display_name: str
+    is_online: bool = False
+    current_room_id: Optional[UUID] = None
+    current_room_title: Optional[str] = None
+    current_challenge_title: Optional[str] = None
+
+
+class AdminTeamLabProgress(BaseModel):
+    room_id: UUID
+    title: str
+    status: str
+    solved_count: int = 0
+    total_count: int = 0
+    points_earned: int = 0
+
+
+class AdminTeamDetailResponse(BaseModel):
+    team_id: UUID
+    team_name: str
+    rank: Optional[int] = None
+    score: int = 0
+    member_count: int = 0
+    max_members: int = 4
+    current_labs: List[str] = []
+    completed_labs: List[str] = []
+    members: List[AdminTeamProgressMember] = []
+    labs: List[AdminTeamLabProgress] = []
+
+
+class AdminTeamProgressListItem(BaseModel):
+    team_id: UUID
+    team_name: str
+    rank: Optional[int] = None
+    score: int = 0
+    team_score: int = 0
+    solves_count: int = 0
+    member_count: int = 0
+    max_members: int = 4
+    members_online: int = 0
+    current_labs: List[str] = []
+    completed_labs: List[str] = []
+
+
+class AdminTeamProgressListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    teams: List[AdminTeamProgressListItem] = []
+
+
 class LabCohortUser(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     user_id: UUID

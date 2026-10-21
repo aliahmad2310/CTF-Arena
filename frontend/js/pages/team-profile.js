@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("public-team-created").textContent = formatDate(team.created_at);
     document.getElementById("public-team-score").textContent = team.score.toLocaleString();
     document.getElementById("public-team-rank").textContent = team.rank ? `#${team.rank}` : "Unranked";
-    document.getElementById("public-team-capacity").textContent = `${team.member_count} Members`;
+    document.getElementById("public-team-capacity").textContent = `${team.member_count} / ${team.max_team_size} Members`;
     document.getElementById("public-roster-count").textContent = `${team.member_count} Members`;
 
     const tbody = document.getElementById("public-roster-tbody");

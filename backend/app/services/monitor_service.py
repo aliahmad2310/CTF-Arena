@@ -14,6 +14,11 @@ from app.models.monitor import (
     UserProgressSummaryItem,
     UserProgressListResponse,
     UserDetailResponse,
+    AdminTeamDetailResponse,
+    AdminTeamProgressMember,
+    AdminTeamLabProgress,
+    AdminTeamProgressListItem,
+    AdminTeamProgressListResponse,
     UserDetailLabCard,
     UserDetailChallengeItem,
     LabDetailMetricsResponse,
@@ -238,6 +243,161 @@ async def get_user_progress_directory(
     ]
 
     return UserProgressListResponse(total=total, page=page, page_size=page_size, users=users)
+
+
+async def get_team_progress_directory(page: int = 1, page_size: int = 50) -> AdminTeamProgressListResponse:
+    """Return ranked teams with aggregated active and completed lab titles."""
+    supabase = get_supabase_client()
+    offset = (page - 1) * page_size
+    standings = supabase.table("team_leaderboard").select("*", count="exact").order("rank").range(offset, offset + page_size - 1).execute()
+    rows = standings.data or []
+    team_ids = [row["team_id"] for row in rows]
+    team_settings = supabase.table("teams").select("id, max_members").in_("id", team_ids).execute() if team_ids else None
+    capacity_by_team = {str(row["id"]): int(row.get("max_members", 4)) for row in (team_settings.data or [])} if team_settings else {}
+    profiles = supabase.table("profiles").select("id, team_id, role, last_seen_at, current_room_id, rooms(title)").in_("team_id", team_ids).eq("role", "user").execute() if team_ids else None
+    member_rows = profiles.data or [] if profiles else []
+    member_ids = [row["id"] for row in member_rows]
+    progress_result = supabase.table("lab_progress").select("user_id, room_id, status, rooms(title)").in_("user_id", member_ids).execute() if member_ids else None
+    progress_rows = progress_result.data or [] if progress_result else []
+
+    progress_by_team: Dict[str, Dict[str, set[str]]] = {}
+    profile_to_team = {str(profile["id"]): str(profile["team_id"]) for profile in member_rows}
+    for progress in progress_rows:
+        team_key = profile_to_team.get(str(progress["user_id"]))
+        if not team_key:
+            continue
+        groups = progress_by_team.setdefault(team_key, {"current": set(), "completed": set()})
+        title = (progress.get("rooms") or {}).get("title")
+        if title and progress.get("status") == "completed":
+            groups["completed"].add(title)
+        elif title and progress.get("status") == "in_progress":
+            groups["current"].add(title)
+
+    profiles_by_team: Dict[str, List[Dict[str, Any]]] = {}
+    for member in member_rows:
+        profiles_by_team.setdefault(str(member["team_id"]), []).append(member)
+
+    now = datetime.now(timezone.utc)
+    active_before = now - timedelta(minutes=settings.ACTIVE_WINDOW_MINUTES)
+    teams = []
+    for row in rows:
+        team_id = str(row["team_id"])
+        members = profiles_by_team.get(team_id, [])
+        activity = progress_by_team.get(team_id, {"current": set(), "completed": set()})
+        live_lab_names = {
+            (member.get("rooms") or {}).get("title")
+            for member in members
+            if member.get("current_room_id")
+            and member.get("last_seen_at")
+            and datetime.fromisoformat(member["last_seen_at"].replace("Z", "+00:00")) >= active_before
+            and (member.get("rooms") or {}).get("title")
+        }
+        teams.append(AdminTeamProgressListItem(
+            team_id=row["team_id"],
+            team_name=row["team_name"],
+            rank=row["rank"],
+            score=row["score"],
+            team_score=row["score"],
+            solves_count=row["solves_count"],
+            member_count=row.get("member_count", len(members)),
+            max_members=capacity_by_team.get(team_id, 4),
+            members_online=sum(1 for member in members if member.get("last_seen_at") and datetime.fromisoformat(member["last_seen_at"].replace("Z", "+00:00")) >= active_before),
+            current_labs=sorted(live_lab_names),
+            completed_labs=sorted(activity["completed"]),
+        ))
+    return AdminTeamProgressListResponse(total=standings.count or 0, page=page, page_size=page_size, teams=teams)
+
+
+async def get_team_detail_audit(team_id: str) -> AdminTeamDetailResponse:
+    """Return team roster activity and per-lab aggregate completion status."""
+    supabase = get_supabase_client()
+    team_result = supabase.table("teams").select("id, name, max_members").eq("id", team_id).limit(1).execute()
+    if not team_result.data:
+        raise ValueError(f"Team {team_id} not found")
+    team = team_result.data[0]
+    leaderboard = supabase.table("team_leaderboard").select("rank, score").eq("team_id", team_id).limit(1).execute()
+    rank_row = leaderboard.data[0] if leaderboard.data else {}
+    members_result = supabase.table("profiles").select(
+        "id, username, display_name, role, last_seen_at, current_room_id, current_challenge_id, rooms(title), challenges(title)"
+    ).eq("team_id", team_id).eq("role", "user").execute()
+    members_raw = members_result.data or []
+    now = datetime.now(timezone.utc)
+    active_cutoff = now - timedelta(minutes=settings.ACTIVE_WINDOW_MINUTES)
+    members = [AdminTeamProgressMember(
+        user_id=row["id"],
+        username=row["username"],
+        display_name=row["display_name"],
+        is_online=bool(row.get("last_seen_at") and datetime.fromisoformat(row["last_seen_at"].replace("Z", "+00:00")) >= active_cutoff),
+        current_room_id=row.get("current_room_id"),
+        current_room_title=(row.get("rooms") or {}).get("title"),
+        current_challenge_title=(row.get("challenges") or {}).get("title"),
+    ) for row in members_raw]
+
+    rooms_result = supabase.table("rooms").select("id, title").eq("is_published", True).order("display_order").execute()
+    rooms = rooms_result.data or []
+    user_ids = [row["id"] for row in members_raw]
+    progress_result = supabase.table("lab_progress").select("user_id, room_id, status, solved_count, total_count, points_earned").in_("user_id", user_ids).execute() if user_ids else None
+    progress_rows = progress_result.data or [] if progress_result else []
+    challenge_counts_result = supabase.table("challenges").select("room_id").eq("is_published", True).execute()
+    challenge_totals: Dict[str, int] = {}
+    published_challenges_by_room: Dict[str, set[str]] = {}
+    for challenge in challenge_counts_result.data or []:
+        key = str(challenge["room_id"])
+        challenge_totals[key] = challenge_totals.get(key, 0) + 1
+        published_challenges_by_room.setdefault(key, set()).add(challenge["id"])
+
+    solve_result = supabase.table("solves").select(
+        "user_id, challenge_id, challenges!inner(room_id)"
+    ).in_("user_id", user_ids).execute() if user_ids else None
+    solved_by_user_room: Dict[tuple[str, str], set[str]] = {}
+    for solve in (solve_result.data or []) if solve_result else []:
+        room_id = str((solve.get("challenges") or {}).get("room_id", ""))
+        solved_by_user_room.setdefault((str(solve["user_id"]), room_id), set()).add(str(solve["challenge_id"]))
+
+    labs: List[AdminTeamLabProgress] = []
+    for room in rooms:
+        room_id = str(room["id"])
+        rows_for_room = [row for row in progress_rows if str(row["room_id"]) == room_id]
+        required_challenges = published_challenges_by_room.get(room_id, set())
+        solved = sum(len(solved_by_user_room.get((str(member_id), room_id), set())) for member_id in user_ids)
+        total = challenge_totals.get(room_id, 0) * len(members_raw)
+        complete = bool(members_raw) and bool(required_challenges) and all(
+            required_challenges.issubset(solved_by_user_room.get((str(member_id), room_id), set()))
+            for member_id in user_ids
+        )
+        has_activity = bool(rows_for_room) or solved > 0 or any(
+            row.get("current_room_id") == room["id"] for row in members_raw
+        )
+        status_value = "completed" if complete else "in_progress" if has_activity else "not_started"
+        labs.append(AdminTeamLabProgress(
+            room_id=room["id"],
+            title=room["title"],
+            status=status_value,
+            solved_count=solved,
+            total_count=total,
+            points_earned=sum(int(row.get("points_earned", 0)) for row in rows_for_room),
+        ))
+    current_lab_names = sorted({
+        (member.get("rooms") or {}).get("title")
+        for member in members_raw
+        if member.get("current_room_id")
+        and member.get("last_seen_at")
+        and datetime.fromisoformat(member["last_seen_at"].replace("Z", "+00:00")) >= active_cutoff
+        and (member.get("rooms") or {}).get("title")
+    })
+    completed_lab_names = sorted({lab.title for lab in labs if lab.status == "completed"})
+    return AdminTeamDetailResponse(
+        team_id=team["id"],
+        team_name=team["name"],
+        rank=rank_row.get("rank"),
+        score=rank_row.get("score", 0),
+        member_count=len(members),
+        max_members=team.get("max_members", 4),
+        current_labs=current_lab_names,
+        completed_labs=completed_lab_names,
+        members=members,
+        labs=labs,
+    )
 
 
 async def get_user_detail_audit(user_id: str) -> UserDetailResponse:

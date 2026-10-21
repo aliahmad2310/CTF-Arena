@@ -6,14 +6,14 @@
 
 import { api } from "../api.js";
 import { initLayout } from "../layout.js";
-import { getUserProfile } from "../auth.js";
-import { escapeHtml, formatRelativeTime, debounce } from "../utils.js";
-import { CONFIG } from "../config.js";
+import { getUserProfile, requireAdmin } from "../auth.js";
+import { escapeHtml, debounce } from "../utils.js";
 
 let activeTab = "teams"; // 'teams' | 'users'
 let chartInstance = null;
 let pollTimer = null;
 let currentProfile = null;
+let isAdmin = false;
 let refreshIntervalSeconds = 15;
 const teamColors = new Map();
 const timelineColors = [
@@ -23,10 +23,22 @@ const timelineColors = [
 
 document.addEventListener("DOMContentLoaded", async () => {
   currentProfile = await getUserProfile();
+  isAdmin = currentProfile?.role === "admin";
   await initLayout();
+
+  if (isAdmin) {
+    try {
+      await requireAdmin();
+      document.getElementById("timeline-chart")?.closest(".card")?.classList.add("hidden");
+      document.getElementById("leaderboard-search").placeholder = "Search team or user...";
+    } catch {
+      isAdmin = false;
+    }
+  }
 
   initTabs();
   initSearch();
+  updateTableHeader();
 
   // Retrieve competition settings for dynamic leaderboard refresh rate
   try {
@@ -42,9 +54,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (subtitleEl) {
     if (refreshIntervalSeconds === 0) {
       subtitleEl.textContent = "Live rankings auto-refresh is paused by administrator. Manual refresh available.";
-    } else {
+    } else if (!isAdmin) {
       subtitleEl.textContent = `Live rankings update automatically every ${refreshIntervalSeconds} seconds. Earliest timestamp breaks score ties.`;
     }
+    if (isAdmin) subtitleEl.textContent = "Admin view: click a user or team to inspect lab progress and current activity.";
   }
 
   await refreshAll();
@@ -71,7 +84,7 @@ async function refreshAll(isBackground = false) {
   }
 
   if (!isBackground || !chartInstance) {
-    await fetchAndRenderTimeline();
+    if (!isAdmin) await fetchAndRenderTimeline();
   }
 }
 
@@ -114,6 +127,19 @@ function initTabs() {
 
 function updateTableHeader() {
   const thead = document.getElementById("leaderboard-thead");
+  if (isAdmin && activeTab === "teams") {
+    thead.innerHTML = `
+      <tr>
+        <th style="width: 80px;">Rank</th>
+        <th>Team</th>
+        <th>Members</th>
+        <th>Current Labs</th>
+        <th>Completed Labs</th>
+        <th>Score</th>
+      </tr>
+    `;
+    return;
+  }
   if (activeTab === "teams") {
     thead.innerHTML = `
       <tr>
@@ -129,6 +155,7 @@ function updateTableHeader() {
       <tr>
         <th style="width: 80px;">Rank</th>
         <th>Name</th>
+        ${isAdmin ? "<th>Team</th>" : ""}
         <th>Solves</th>
         <th>Score</th>
       </tr>
@@ -156,9 +183,14 @@ async function fetchTeamsLeaderboard(isBackground = false, query = "") {
 
   try {
     const data = await api.get("/leaderboard/teams", { q: query });
-    renderTeamsTable(data.entries);
+    if (isAdmin) {
+      const progressData = await api.get("/admin/monitor/teams", { page: 1, page_size: 100 });
+      renderAdminTeamsTable(data.entries, progressData.teams || []);
+    } else {
+      renderTeamsTable(data.entries);
+    }
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${isAdmin ? 6 : 5}" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -212,9 +244,14 @@ async function fetchUsersLeaderboard(isBackground = false, query = "") {
 
 function renderUsersTable(entries) {
   const tbody = document.getElementById("leaderboard-tbody");
+  if (isAdmin) {
+    document.getElementById("leaderboard-thead").innerHTML = `
+      <tr><th style="width:80px;">Rank</th><th>User</th><th>Team</th><th>Solves</th><th>Score</th></tr>
+    `;
+  }
 
   if (!entries || entries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-dim); padding: var(--space-8);">No competitors ranked yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; color: var(--text-dim); padding: var(--space-8);">No competitors ranked yet.</td></tr>`;
     return;
   }
 
@@ -229,12 +266,13 @@ function renderUsersTable(entries) {
       <tr style="${isMe ? "background-color: rgba(0, 255, 102, 0.05); border-left: 3px solid var(--accent-green);" : ""}">
         <td class="${rankClass}">#${user.rank}</td>
         <td>
-          <a href="/profile.html?username=${encodeURIComponent(user.username)}" class="text-bold">
+          <a href="${isAdmin ? `/admin/user.html?id=${encodeURIComponent(user.user_id)}` : `/profile.html?username=${encodeURIComponent(user.username)}`}" class="text-bold">
             ${escapeHtml(user.username)}
           </a>
           <span class="text-dim text-xs" style="margin-left: 0.35rem;">(${escapeHtml(user.display_name)})</span>
           ${isMe ? `<span class="badge badge-green" style="margin-left: 0.5rem; font-size: 0.65rem;">You</span>` : ""}
         </td>
+        ${isAdmin ? `<td>${escapeHtml(user.team_name || "Solo")}</td>` : ""}
         <td class="text-mono">${user.solves_count}</td>
         <td class="text-green text-mono font-bold">${user.score.toLocaleString()}</td>
       </tr>
@@ -242,6 +280,29 @@ function renderUsersTable(entries) {
   });
 
   tbody.innerHTML = html;
+}
+
+function renderAdminTeamsTable(entries, progressTeams) {
+  const tbody = document.getElementById("leaderboard-tbody");
+  document.getElementById("leaderboard-thead").innerHTML = `
+    <tr><th>Rank</th><th>Team</th><th>Members</th><th>Current Labs</th><th>Completed Labs</th><th>Score</th></tr>
+  `;
+  if (!entries?.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:var(--space-6);">No teams on the scoreboard.</td></tr>';
+    return;
+  }
+  const progressLookup = new Map(progressTeams.map((team) => [String(team.team_id), team]));
+  tbody.innerHTML = entries.map((team) => {
+    const details = progressLookup.get(String(team.team_id)) || {};
+    const current = details.current_labs?.length ? details.current_labs.map(escapeHtml).join(", ") : "None";
+    const done = details.completed_labs?.length ? details.completed_labs.map(escapeHtml).join(", ") : "None";
+    return `<tr>
+      <td>#${team.rank}</td>
+      <td><a class="text-bold" href="/admin/team.html?id=${encodeURIComponent(team.team_id)}">${escapeHtml(team.team_name)}</a></td>
+      <td>${team.member_count} / ${details.max_members || 4} (${details.members_online || 0} online)</td>
+      <td>${current}</td><td>${done}</td><td class="text-green text-mono font-bold">${team.score.toLocaleString()}</td>
+    </tr>`;
+  }).join("");
 }
 
 async function fetchAndRenderTimeline() {

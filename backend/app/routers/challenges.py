@@ -2,7 +2,7 @@ from typing import Dict, Any, List, Optional
 from uuid import UUID
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import Response
 
 from app.core.deps import get_optional_current_user, get_current_user
 from app.core.rate_limit import limiter
@@ -159,25 +159,33 @@ async def download_challenge_file(
     Generates a secure download link for challenge artifacts stored in Supabase Storage.
     """
     supabase = get_supabase_client()
-    f_res = supabase.table("challenge_files").select("file_path, file_name").eq("id", str(file_id)).eq("challenge_id", str(id)).limit(1).execute()
+    f_res = supabase.table("challenge_files").select(
+        "file_path, file_name, file_size, challenges!inner(is_published)"
+    ).eq("id", str(file_id)).eq("challenge_id", str(id)).limit(1).execute()
 
     if not f_res.data or len(f_res.data) == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment file not found")
 
     file_row = f_res.data[0]
+    if not file_row.get("challenges", {}).get("is_published") and current_user.get("role") != "admin":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment file not found")
     file_path = file_row["file_path"]
 
     try:
-        # Create signed URL valid for 60 seconds from private bucket
-        signed_res = supabase.storage.from_("challenge-files").create_signed_url(file_path, 60)
-        signed_url = signed_res.get("signedURL") or signed_res.get("signedUrl")
-        if signed_url:
-            return RedirectResponse(url=signed_url)
-    except Exception:
-        pass
+        file_bytes = supabase.storage.from_("challenge-files").download(file_path)
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Attachment storage is unavailable") from exc
 
-    # Fallback to direct public path if bucket is configured public or mock environment
-    return {"file_name": file_row["file_name"], "path": file_path, "status": "Ready for download"}
+    file_name = file_row["file_name"].replace("\r", "").replace("\n", "").replace('"', "")
+    return Response(
+        content=file_bytes,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{file_name}"',
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @router.post("/{id}/submit", response_model=FlagSubmitResponse)

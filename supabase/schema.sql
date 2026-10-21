@@ -32,10 +32,74 @@ CREATE TABLE IF NOT EXISTS public.teams (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL UNIQUE CHECK (char_length(name) >= 3 AND char_length(name) <= 30),
     invite_code TEXT NOT NULL UNIQUE CHECK (char_length(invite_code) >= 8),
+    max_members INT NOT NULL DEFAULT 4 CHECK (max_members BETWEEN 1 AND 100),
     captain_id UUID, -- References profiles.id; circular FK resolved after profiles definition
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Upgrade existing deployments with a per-team capacity (existing teams retain the legacy default).
+ALTER TABLE public.teams
+    ADD COLUMN IF NOT EXISTS max_members INT NOT NULL DEFAULT 4 CHECK (max_members BETWEEN 1 AND 100);
+
+-- Enforce team capacity inside PostgreSQL as well as the API. Locking the team row
+-- serializes competing joins and capacity changes, preventing a count-then-update race.
+CREATE OR REPLACE FUNCTION public.enforce_team_member_capacity()
+RETURNS TRIGGER AS $$
+DECLARE
+    capacity_limit INT;
+    current_member_count INT;
+BEGIN
+    IF NEW.team_id IS NULL OR NEW.team_id IS NOT DISTINCT FROM OLD.team_id THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT max_members INTO capacity_limit
+    FROM public.teams
+    WHERE id = NEW.team_id
+    FOR UPDATE;
+
+    IF capacity_limit IS NULL THEN
+        RAISE EXCEPTION 'Team does not exist';
+    END IF;
+
+    SELECT COUNT(*) INTO current_member_count
+    FROM public.profiles
+    WHERE team_id = NEW.team_id;
+
+    IF current_member_count >= capacity_limit THEN
+        RAISE EXCEPTION 'Team has reached its maximum size of % members', capacity_limit;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.enforce_team_capacity_not_below_members()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_member_count INT;
+BEGIN
+    IF NEW.max_members IS NOT DISTINCT FROM OLD.max_members THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT COUNT(*) INTO current_member_count
+    FROM public.profiles
+    WHERE team_id = NEW.id;
+
+    IF current_member_count > NEW.max_members THEN
+        RAISE EXCEPTION 'Team currently has % members; capacity cannot be lower', current_member_count;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS teams_capacity_not_below_members ON public.teams;
+CREATE TRIGGER teams_capacity_not_below_members
+    BEFORE UPDATE OF max_members ON public.teams
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_team_capacity_not_below_members();
 
 -- ------------------------------------------------------------------------------
 -- 3. Profiles Table (Linked to Supabase auth.users)
@@ -54,6 +118,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+DROP TRIGGER IF EXISTS profiles_enforce_team_capacity ON public.profiles;
+CREATE TRIGGER profiles_enforce_team_capacity
+    BEFORE INSERT OR UPDATE ON public.profiles
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_team_member_capacity();
 
 -- Add foreign key constraint for teams.captain_id referencing profiles.id
 ALTER TABLE public.teams 

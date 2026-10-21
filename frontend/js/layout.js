@@ -18,7 +18,7 @@ export async function initLayout({ skipProfile = false } = {}) {
   renderNavbar(profile);
   renderFooter();
 
-  if (window.location.pathname.includes("/admin/")) {
+  if (window.location.pathname.includes("/admin/") || profile?.role === "admin") {
     renderAdminSubNav();
   }
 }
@@ -71,12 +71,12 @@ function renderNavbar(profile) {
         <ul class="navbar-nav">
           <li><a href="/labs.html" class="nav-link ${currentPath.includes("/labs.html") || currentPath.includes("/lab.html") ? "active" : ""}">Labs</a></li>
           <li><a href="/leaderboard.html" class="nav-link ${currentPath.includes("/leaderboard.html") ? "active" : ""}">Leaderboard</a></li>
-          ${isAuth ? `
+          ${isAuth && !isAdmin ? `
             <li><a href="/team.html" class="nav-link ${currentPath.includes("/team.html") ? "active" : ""}">Team</a></li>
             <li><a href="/" class="nav-link ${currentPath === "/" || currentPath === "/index.html" ? "active" : ""}">Dashboard</a></li>
           ` : ""}
           ${isAdmin ? `
-            <li><a href="/admin/monitor.html" class="nav-link text-cyan ${currentPath.includes("/admin/") ? "active" : ""}">Admin Console</a></li>
+            <li><a href="/admin/index.html" class="nav-link text-cyan ${currentPath === "/admin/" || currentPath.endsWith("/admin/index.html") ? "active" : ""}">Championship</a></li>
           ` : ""}
         </ul>
 
@@ -85,14 +85,15 @@ function renderNavbar(profile) {
             <div style="display:flex; align-items:center; gap:0.75rem;">
               <a href="/profile.html?username=${encodeURIComponent(profile.username)}" class="btn btn-sm btn-secondary" style="font-family:var(--font-mono);">
                 <span class="text-green">${profile.username}</span>
-                <span class="text-dim">(${profile.total_score !== undefined ? profile.total_score : 0} pts)</span>
+                ${!isAdmin ? `<span class="text-dim">(${profile.total_score !== undefined ? profile.total_score : 0} pts)</span>` : ""}
               </a>
-              <button type="button" id="logout-btn" class="btn btn-sm btn-secondary" title="Sign out" aria-label="Sign out">
+              <button type="button" id="logout-btn" class="btn btn-primary navbar-login-button" title="Sign out" aria-label="Sign out">
+                <span>Sign out</span>
                 ${Icons.logOut(16)}
               </button>
             </div>
           ` : `
-            <a href="/login.html" class="btn btn-primary btn-lg">Login</a>
+            <a href="/login.html" class="btn btn-primary navbar-login-button">Login</a>
           `}
         </div>
       </div>
@@ -113,6 +114,7 @@ function renderAdminSubNav() {
   const currentPath = window.location.pathname;
 
   const tabs = [
+    { label: "Championship", path: "/admin/index.html" },
     { label: "Overview", path: "/admin/monitor.html" },
     { label: "Live Activity", path: "/admin/live.html" },
     { label: "User Progress", path: "/admin/progress.html" },

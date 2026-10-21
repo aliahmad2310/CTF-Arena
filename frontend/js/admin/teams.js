@@ -40,22 +40,29 @@ function initCreateTeamBtn() {
             <input type="text" id="ct-captain" class="form-input form-input-mono" placeholder="username of an existing competitor">
             <div class="form-helper">The designated user will become squad captain.</div>
           </div>
+          <div class="form-group">
+            <label class="form-label" for="ct-max-members">Maximum Members</label>
+            <input type="number" id="ct-max-members" class="form-input form-input-mono" value="4" min="1" max="100" required>
+            <div class="form-helper">Controls how many users can join this team.</div>
+          </div>
         </form>
       `,
       confirmText: "Create Squad",
       onConfirm: async () => {
         const name = document.getElementById("ct-name").value.trim();
         const captain = document.getElementById("ct-captain").value.trim();
+        const max_members = Number(document.getElementById("ct-max-members").value);
 
-        if (!name) {
-          showToast("Squad name is required", "error");
+        if (!name || !Number.isInteger(max_members) || max_members < 1 || max_members > 100) {
+          showToast("Enter a team name and a maximum member count from 1 to 100", "error");
           return false;
         }
 
         try {
           await api.post("/admin/teams", {
             name,
-            captain_username: captain || null
+            captain_username: captain || null,
+            max_members
           });
           showToast(`Squad '${name}' created successfully`, "success");
           await loadTeams();
@@ -109,6 +116,12 @@ function renderTeams(teams) {
             ${(t.members || []).map((member) => `<span class="badge badge-grey">${escapeHtml(member.username)} <button type="button" class="remove-member-btn" aria-label="Remove ${escapeHtml(member.username)} from ${escapeHtml(t.name)}" data-team-id="${t.id}" data-user-id="${member.id}" data-username="${escapeHtml(member.username)}" style="border:0;background:transparent;color:inherit;cursor:pointer;">Remove</button></span>`).join("") || `<span class="text-dim">No members</span>`}
           </div>
           <button type="button" class="btn btn-xs btn-outline add-member-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}">Add member</button>
+          <div class="text-dim text-xs" style="margin-top:0.5rem;">Capacity: ${(t.members || []).length} / ${t.max_members || 4}</div>
+          <div style="display:flex;gap:0.35rem;align-items:center;margin-top:0.35rem;">
+            <label class="text-xs text-dim" for="team-capacity-${t.id}">Max:</label>
+            <input id="team-capacity-${t.id}" type="number" class="form-input form-input-mono" min="1" max="100" value="${t.max_members || 4}" style="width:5rem;padding:0.25rem 0.4rem;">
+            <button type="button" class="btn btn-xs btn-secondary capacity-edit-btn" data-id="${t.id}">Save</button>
+          </div>
         </td>
         <td class="text-dim text-mono text-xs">${formatDate(t.created_at)}</td>
         <td style="text-align: right; white-space: nowrap;">
@@ -155,6 +168,24 @@ function renderTeams(teams) {
           }
         }
       });
+    };
+  });
+
+  tbody.querySelectorAll(".capacity-edit-btn").forEach((btn) => {
+    btn.onclick = async () => {
+      const teamId = btn.dataset.id;
+      const max_members = Number(document.getElementById(`team-capacity-${teamId}`).value);
+      if (!Number.isInteger(max_members) || max_members < 1 || max_members > 100) {
+        showToast("Maximum members must be between 1 and 100", "error");
+        return;
+      }
+      try {
+        await api.patch(`/admin/teams/${teamId}/capacity`, { max_members });
+        showToast("Team capacity updated", "success");
+        await loadTeams();
+      } catch (err) {
+        showToast(err.message || "Unable to update team capacity", "error");
+      }
     };
   });
 

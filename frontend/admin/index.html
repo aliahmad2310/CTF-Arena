@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Operations Center - CTF Arena</title>
-  <meta name="description" content="Administrative control center for CTF Arena labs, challenges, users, and competition scheduling.">
+  <title>Championship Countdown - CTF Arena</title>
+  <meta name="description" content="View and update the CTF Arena championship countdown.">
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <link rel="stylesheet" href="/css/variables.css">
   <link rel="stylesheet" href="/css/base.css">
@@ -18,81 +18,44 @@
   <div id="navbar-root"></div>
   <div id="admin-subnav-root"></div>
 
-  <main class="site-main container">
-    <!-- Header -->
-    <div style="margin-bottom: var(--space-8);">
-      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
-        <span class="badge badge-green">Administrative Clearance</span>
-        <span class="text-mono text-dim text-xs">ROOT ACCESS</span>
+  <main class="site-main container" style="max-width: 860px;">
+    <section class="hero-section" style="text-align:center;">
+      <span id="championship-status" class="badge badge-grey">Loading schedule</span>
+      <h1 id="championship-title" style="font-size:var(--text-3xl);margin:var(--space-4) 0 var(--space-2);">CTF Arena Championship</h1>
+      <p id="countdown-label" class="text-dim" style="margin:0 0 var(--space-5);">Championship countdown</p>
+      <div id="championship-countdown" class="countdown-grid" role="button" tabindex="0" aria-label="Double-click to edit championship countdown">
+        <div class="countdown-block"><div id="countdown-days" class="countdown-value">--</div><div class="countdown-label">Days</div></div>
+        <div class="countdown-block"><div id="countdown-hours" class="countdown-value">--</div><div class="countdown-label">Hours</div></div>
+        <div class="countdown-block"><div id="countdown-minutes" class="countdown-value">--</div><div class="countdown-label">Minutes</div></div>
+        <div class="countdown-block"><div id="countdown-seconds" class="countdown-value">--</div><div class="countdown-label">Seconds</div></div>
       </div>
-      <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-2);">Mission Operations Center</h1>
-      <p class="text-dim" style="margin: 0;">
-        Manage challenge authoring, oversee competitor squads, control CTF timing, and access real-time telemetry.
-      </p>
-    </div>
-
-    <!-- Quick Navigation Hub -->
-    <div class="grid-3" style="margin-bottom: var(--space-8);">
-      <div class="card">
+      <p class="text-dim text-xs" style="margin-top:var(--space-4);">Double-click the countdown, or focus it and press Enter, to edit the championship schedule.</p>
+      <form id="countdown-editor" class="card hidden" style="max-width:560px;margin:var(--space-6) auto 0;text-align:left;">
         <div class="card-body">
-          <h2 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Live Monitoring</h2>
-          <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin-bottom: var(--space-4);">
-            Monitor active online competitors, inspect stuck user alerts, and view live solve feeds.
-          </p>
-          <a href="/admin/monitor.html" class="btn btn-sm btn-primary">Open Live Monitor</a>
+          <h2 style="font-size:var(--text-lg);margin:0 0 var(--space-4);">Edit Championship Countdown</h2>
+          <div class="form-group">
+            <label class="form-label" for="editor-title">Championship title</label>
+            <input id="editor-title" class="form-input" type="text" required minlength="3" maxlength="100">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editor-target">Countdown target</label>
+            <select id="editor-target" class="form-select">
+              <option value="start_time">Championship starts</option>
+              <option value="end_time">Championship ends</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label id="editor-date-label" class="form-label" for="editor-date">Start date and time</label>
+            <input id="editor-date" class="form-input form-input-mono" type="datetime-local" required>
+            <div class="form-helper">Time is interpreted in your browser's local timezone and saved as UTC.</div>
+          </div>
+          <div style="display:flex;gap:var(--space-2);justify-content:flex-end;">
+            <button id="cancel-countdown-edit" type="button" class="btn btn-secondary">Cancel</button>
+            <button id="save-countdown-edit" type="submit" class="btn btn-primary">Save Schedule</button>
+          </div>
         </div>
-      </div>
-
-      <div class="card">
-        <div class="card-body">
-          <h2 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Progress Matrix</h2>
-          <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin-bottom: var(--space-4);">
-            Inspect the high-density User-by-Lab and Team-by-Lab solve matrix heatmap.
-          </p>
-          <a href="/admin/matrix.html" class="btn btn-sm btn-outline">View Heatmap Matrix</a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-body">
-          <h2 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Lab Authoring</h2>
-          <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin-bottom: var(--space-4);">
-            Create training rooms, publish challenges, and configure salted SHA-256 flag hashes.
-          </p>
-          <a href="/admin/labs.html" class="btn btn-sm btn-secondary">Manage Labs</a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-body">
-          <h2 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Competitor Roster</h2>
-          <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin-bottom: var(--space-4);">
-            Audit registered users, enforce security suspensions, and inspect account activity.
-          </p>
-          <a href="/admin/users.html" class="btn btn-sm btn-secondary">Review Users</a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-body">
-          <h2 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Submissions Audit</h2>
-          <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin-bottom: var(--space-4);">
-            Inspect global real-time flag submission attempts, correct hits, and failed brute-force guesses.
-          </p>
-          <a href="/admin/submissions.html" class="btn btn-sm btn-secondary">View Audit Log</a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-body">
-          <h2 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">CTF Settings</h2>
-          <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin-bottom: var(--space-4);">
-            Configure competition start/end timestamps, freeze the live leaderboard, or update squad capacity.
-          </p>
-          <a href="/admin/settings.html" class="btn btn-sm btn-secondary">Edit Settings</a>
-        </div>
-      </div>
-    </div>
+      </form>
+    </section>
   </main>
 
   <div id="footer-root"></div>

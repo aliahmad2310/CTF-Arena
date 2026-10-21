@@ -433,7 +433,9 @@ Follow this guide to provision a fresh Supabase project for CTF Arena:
    - Under **Redirect URLs**, add `http://localhost:3000/**`, `http://127.0.0.1:8000/**`, and production domains.
 5. **Private Storage Bucket Setup**:
    - Navigate to **Storage** and click **New Bucket**.
-   - Name the bucket `challenge-files` and ensure the **Public bucket** toggle is **OFF** (Private).
+  - Name the bucket `challenge-files` and ensure the **Public bucket** toggle is **OFF** (Private).
+  - Do not add public read policies or configure a public URL. The FastAPI service uploads/downloads files using the service-role client; competitors receive only authenticated API downloads.
+  - Admin challenge authoring accepts PNG/JPG/GIF/WebP images, plain text/Markdown, Python source, PDF, and ZIP files, up to 10 MiB per file. Executable binaries and HTML/SVG are rejected. Python scripts are stored and served as forced downloads (`application/octet-stream`) and are never imported, evaluated, spawned, or run by the backend.
 6. **Create or reset the administrator account without knowing its old password**:
    - In Supabase, open **SQL Editor** and run this query, replacing the username and new password. It updates the Auth password hash directly; no previous password is needed.
      ```sql

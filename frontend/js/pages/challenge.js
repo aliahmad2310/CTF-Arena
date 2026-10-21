@@ -7,6 +7,7 @@
 import { api } from "../api.js";
 import { initLayout } from "../layout.js";
 import { startHeartbeat, getSession } from "../auth.js";
+import { CONFIG } from "../config.js";
 import { escapeHtml } from "../utils.js";
 import { showToast, showModal } from "../ui.js";
 
@@ -114,13 +115,31 @@ function renderChallenge(ch) {
             <span class="text-mono text-bold text-sm" style="color:#ffffff;">${escapeHtml(f.file_name)}</span>
             <span class="text-dim text-xs" style="margin-left: 0.5rem;">(${Math.round(f.file_size / 1024)} KB)</span>
           </div>
-          <a href="${CONFIG.API_BASE_URL}${f.download_url}" target="_blank" class="btn btn-sm btn-secondary">
+          <button type="button" class="btn btn-sm btn-secondary download-challenge-file" data-url="${escapeHtml(f.download_url)}" data-name="${escapeHtml(f.file_name)}">
             Download File
-          </a>
+          </button>
         </div>
       `;
     });
     filesList.innerHTML = filesHtml;
+    filesList.querySelectorAll(".download-challenge-file").forEach((button) => {
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          const response = await api.get(`${CONFIG.API_BASE_URL}${button.dataset.url}`);
+          const blobUrl = URL.createObjectURL(await response.blob());
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = button.dataset.name || "challenge-attachment";
+          link.click();
+          URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+          showToast(err.message || "Attachment download failed", "error");
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
   } else {
     filesSection.classList.add("hidden");
   }

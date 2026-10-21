@@ -15,6 +15,10 @@ let countdownInterval = null;
 document.addEventListener("DOMContentLoaded", async () => {
   const profile = await getUserProfile();
   if (profile) {
+    if (profile.role === "admin") {
+      window.location.replace("/admin/index.html");
+      return;
+    }
     await mountAuthenticatedDashboard(profile);
     return;
   }
