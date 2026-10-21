@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from app.core.deps import require_admin
 from app.db.client import get_supabase_client
 from app.core.security import compute_flag_hash
-from app.services.team_service import enforce_team_capacity, insert_team_compatible
+from app.services.team_service import enforce_team_capacity, insert_team_compatible, select_team_compatible
 from app.models.common import MessageResponse, CtfStatusResponse
 from app.models.admin import (
     AdminRoomCreateRequest,
@@ -445,16 +445,7 @@ async def admin_create_user(
 
         if payload.team_id:
             team_id = str(payload.team_id)
-            try:
-                team_res = supabase.table("teams").select("id, max_members").eq("id", team_id).limit(1).execute()
-            except Exception as exc:
-                error_text = str(exc).lower()
-                if "max_members" in error_text and ("pgrst204" in error_text or "schema cache" in error_text):
-                    raise HTTPException(
-                        status_code=status.HTTP_409_CONFLICT,
-                        detail="Team capacity cannot be changed until the database max_members migration is applied.",
-                    ) from exc
-                raise
+            team_res = select_team_compatible(supabase, team_id, "id, max_members")
             if not team_res.data:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
             max_size = team_res.data[0].get("max_members", 4)
@@ -506,7 +497,7 @@ async def admin_add_team_member(
     supabase = get_supabase_client()
     team_id = str(id)
     try:
-        team_res = supabase.table("teams").select("id, max_members, name").eq("id", team_id).limit(1).execute()
+        team_res = select_team_compatible(supabase, team_id, "id, max_members, name")
         if not team_res.data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
 

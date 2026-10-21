@@ -7,6 +7,7 @@ from uuid import UUID
 from app.db.client import get_supabase_client
 from app.core.config import settings
 from app.services.alert_service import sanitize_csv_cell
+from app.services.team_service import select_team_compatible
 from app.models.monitor import (
     MonitorOverviewStats,
     LiveActiveUserItem,
@@ -262,10 +263,11 @@ async def get_team_progress_directory(page: int = 1, page_size: int = 50) -> Adm
     supabase = get_supabase_client()
     offset = (page - 1) * page_size
     standings = supabase.table("team_leaderboard").select("*", count="exact").order("rank").range(offset, offset + page_size - 1).execute()
-    rows = standings.data or []
-    team_ids = [row["team_id"] for row in rows]
-    team_settings = supabase.table("teams").select("id, max_members").in_("id", team_ids).execute() if team_ids else None
-    capacity_by_team = {str(row["id"]): int(row.get("max_members", 4)) for row in (team_settings.data or [])} if team_settings else {}
+    try:
+        team_settings = supabase.table("teams").select("id, max_members").in_("id", team_ids).execute() if team_ids else None
+    except Exception:
+        team_settings = None
+    capacity_by_team = {str(row["id"]): int(row.get("max_members", 4)) for row in (team_settings.data or [])} if team_settings and team_settings.data else {}
     profiles = supabase.table("profiles").select("id, team_id, role, last_seen_at, current_room_id, rooms(title)").in_("team_id", team_ids).eq("role", "user").execute() if team_ids else None
     member_rows = profiles.data or [] if profiles else []
     member_ids = [row["id"] for row in member_rows]
@@ -323,7 +325,7 @@ async def get_team_progress_directory(page: int = 1, page_size: int = 50) -> Adm
 async def get_team_detail_audit(team_id: str) -> AdminTeamDetailResponse:
     """Return team roster activity and per-lab aggregate completion status."""
     supabase = get_supabase_client()
-    team_result = supabase.table("teams").select("id, name, max_members").eq("id", team_id).limit(1).execute()
+    team_result = select_team_compatible(supabase, team_id, "id, name, max_members")
     if not team_result.data:
         raise ValueError(f"Team {team_id} not found")
     team = team_result.data[0]

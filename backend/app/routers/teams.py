@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.deps import get_current_user
 from app.db.client import get_supabase_client
-from app.services.team_service import enforce_team_capacity, insert_team_compatible
+from app.services.team_service import enforce_team_capacity, insert_team_compatible, select_team_compatible
 from app.models.team import (
     TeamCreateRequest,
     TeamUpdateRequest,
@@ -352,7 +352,7 @@ async def get_public_team(id: UUID):
     team_id = str(id)
 
     try:
-        team_res = supabase.table("teams").select("id, name, captain_id, max_members, created_at").eq("id", team_id).limit(1).execute()
+        team_res = select_team_compatible(supabase, team_id, "id, name, captain_id, max_members, created_at")
         if not team_res.data or len(team_res.data) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

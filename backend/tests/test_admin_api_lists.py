@@ -49,6 +49,14 @@ class FakeQuery:
         self.calls.append(("in", column, values))
         return self
 
+    def limit(self, count):
+        self.calls.append(("limit", count))
+        return self
+
+    def update(self, data):
+        self.calls.append(("update", data))
+        return self
+
     def execute(self):
         if self.table_name == "teams" and "max_members" in self.selected_columns and self.supabase.fail_legacy_team_column:
             self.supabase.fail_legacy_team_column = False
@@ -195,3 +203,28 @@ async def test_admin_user_list_returns_actionable_service_error_when_database_fa
 
     assert getattr(exc_info.value, "status_code", None) == 503
     assert "user directory could not be loaded" in exc_info.value.detail.lower()
+
+
+@pytest.mark.asyncio
+async def test_admin_add_team_member_succeeds_when_database_lacks_max_members():
+    from app.routers.admin import admin_add_team_member
+    from app.models.admin import AdminTeamMemberRequest
+    import uuid
+
+    team_id = str(uuid.uuid4())
+    team = {"id": team_id, "name": "Legacy Team"}
+    user_id = str(uuid.uuid4())
+    user = {"id": user_id, "username": "ghost", "team_id": None}
+    supabase = FakeSupabase(
+        {"teams": [team], "profiles": [user]},
+        fail_legacy_team_column=True,
+    )
+
+    with patch("app.routers.admin.get_supabase_client", return_value=supabase):
+        res = await admin_add_team_member(
+            id=uuid.UUID(team_id),
+            payload=AdminTeamMemberRequest(username="ghost"),
+            admin={"role": "admin"}
+        )
+
+    assert "added to the team" in res.message

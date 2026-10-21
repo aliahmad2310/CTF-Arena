@@ -7,7 +7,6 @@
 import { api } from "../api.js";
 import { initLayout } from "../layout.js";
 import { getUserProfile } from "../auth.js";
-import { initializeDashboard } from "./dashboard.js";
 import { escapeHtml } from "../utils.js";
 import { requireAdmin } from "../auth.js";
 import { showToast } from "../ui.js";
@@ -31,11 +30,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.body.classList.add("championship-admin-navbar");
     }
     document.documentElement.classList.remove("admin-route-pending");
-  }
-
-  if (profile && !canEditChampionship) {
-    await mountAuthenticatedDashboard(profile);
-    return;
   }
 
   if (!isAdminRoute) await initLayout();
@@ -75,32 +69,6 @@ async function redirectAdminRouteToHome() {
     await supabase.auth.signOut({ scope: "local" });
   } finally {
     window.location.replace("/");
-  }
-}
-
-async function mountAuthenticatedDashboard(profile) {
-  try {
-    const response = await fetch("/dashboard.html");
-    if (!response.ok) throw new Error("Dashboard content could not be loaded");
-
-    const page = new DOMParser().parseFromString(await response.text(), "text/html");
-    const dashboardMain = page.querySelector("main");
-    const currentMain = document.querySelector("main");
-    if (!dashboardMain || !currentMain) throw new Error("Dashboard content is unavailable");
-
-    currentMain.replaceWith(document.importNode(dashboardMain, true));
-    await initializeDashboard(profile);
-  } catch (err) {
-    await initLayout();
-    const main = document.querySelector("main");
-    if (main) {
-      main.replaceChildren();
-      const message = document.createElement("p");
-      message.className = "text-danger";
-      message.textContent = "Your dashboard could not be loaded. Refresh the page to try again.";
-      main.appendChild(message);
-    }
-    console.error("Dashboard mount failed:", err);
   }
 }
 
