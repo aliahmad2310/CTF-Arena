@@ -446,7 +446,7 @@ Follow this guide to provision a fresh Supabase project for CTF Arena:
      ```
    - Confirm the query reports one row. If it reports zero rows, look up the account in **Authentication > Users** and ensure the `profiles` row uses the same user ID. This reset changes the password hash but does not change the account role.
    - To promote an existing account, use `UPDATE public.profiles SET role = 'admin' WHERE username = 'your_username';`.
-   - Log in at `/login` using the username and new password. Public registration and email-based recovery are disabled; administrators create accounts and set/reset user passwords from the admin panel.
+  - Log in at `/login` using the username and new password. Public registration and email recovery are disabled; administrators create accounts and set/reset passwords from the admin panel.
 
 ---
 
@@ -553,7 +553,7 @@ print(f"Hash: {computed_hash}")
 ## 13. End-to-End Demo Walkthrough
 
 1. **Landing & Countdown**: Visit `http://localhost:3000`. The competition countdown timer counts down to competition start or conclusion.
-2. **Competitor Registration**: Click **Register**, enter your username, email, and password. You are automatically logged in and redirected to `dashboard.html`.
+2. **Admin-provisioned accounts**: Public registration is disabled. An administrator creates a username and password in the admin users panel, then shares the credentials securely with the user.
 3. **Squad Formation**: Visit `team.html`, create a squad called `CyberGuardians`, and copy your secret invite code to share with teammates.
 4. **Explore Labs**: Navigate to `labs.html`, choose the **Web Application Exploitation** lab, and open the first challenge: **SQL Injection Fundamentals**.
 5. **Flag Capture**: Enter the demo flag `CTF{sql_injection_bypass_success}` into the submission terminal. A CSS success banner confirms verification, points are awarded, and First Blood is logged.
