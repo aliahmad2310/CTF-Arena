@@ -32,7 +32,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.replace(getSafeRedirectUrl());
       return;
     }
-    showToast("Your session could not be verified. Check the API connection, then sign in again.", "error", 8000);
+    // A stale session was not verified; clear only this browser's local copy so
+    // the new username/password attempt starts with a clean auth state.
+    await supabase.auth.signOut({ scope: "local" });
   }
 
   const form = document.getElementById("login-form");

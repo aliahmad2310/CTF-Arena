@@ -1,8 +1,7 @@
 /**
  * CTF Arena - Supabase Client Initialization
  * File: frontend/js/supabaseClient.js
- * Rule: Supabase JS SDK is used EXCLUSIVELY for authentication operations
- *       (session creation/refresh, signout, and password reset).
+ * Rule: Supabase JS SDK is used EXCLUSIVELY for session creation/refresh and signout.
  *       All game and platform state is mediated via the Python FastAPI backend.
  */
 

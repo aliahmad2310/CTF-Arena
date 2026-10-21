@@ -7,7 +7,6 @@
 import { requireAuth, startHeartbeat } from "../auth.js";
 import { initLayout } from "../layout.js";
 import { api } from "../api.js";
-import { supabase } from "../supabaseClient.js";
 import { showToast } from "../ui.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -23,13 +22,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Populate form with current values
   const usernameInput = document.getElementById("username");
-  const emailInput = document.getElementById("email");
   const displayNameInput = document.getElementById("display-name");
   const avatarUrlInput = document.getElementById("avatar-url");
   const roleBadge = document.getElementById("role-badge");
 
   usernameInput.value = profile.username || "";
-  emailInput.value = profile.email || "Confidential";
   displayNameInput.value = profile.display_name || "";
   avatarUrlInput.value = profile.avatar_url || "";
 
@@ -89,11 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     savePasswordBtn.textContent = "Updating...";
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (error) throw error;
+      await api.post("/me/password", { new_password: newPassword });
 
       showToast("Passphrase successfully updated", "success");
       passwordForm.reset();

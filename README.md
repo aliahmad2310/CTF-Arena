@@ -154,8 +154,6 @@ ctf-arena/
   frontend/
     index.html                  # Landing page for guests and authenticated dashboard at root
     login.html                  # Username/password login
-    forgot-password.html        # Password reset initiation
-    reset-password.html         # Password recovery confirmation
     dashboard.html              # Competitor personal command center
     labs.html                   # Lab training catalog
     lab.html                    # Lab room view with challenge listing
@@ -216,8 +214,6 @@ ctf-arena/
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `index.html` | Public / Competitor | Public landing page or signed-in dashboard | CTF status and top teams for guests; profile, score, progress and activity for signed-in users | Browse labs or review dashboard | `GET /ctf/status`, `GET /leaderboard/teams`, `GET /dashboard` |
 | `login.html` | Public | Authenticate into platform | Username and password | Log in with credentials issued by an administrator | `POST /auth/login` then Supabase session establishment |
-| `forgot-password.html` | Public | Request password reset email | Email address | Send recovery link | Supabase Auth `resetPasswordForEmail()` |
-| `reset-password.html` | Public | Confirm password update | Recovery token | Set new account password | Supabase Auth `updateUser()` |
 | `dashboard.html` | Competitor legacy route | Redirects to the root dashboard | None | Redirect to `/` | None |
 | `labs.html` | Public / Competitor | Catalog of cybersecurity training rooms | Published labs, difficulties, tags | Filter by difficulty and search labs | `GET /rooms` |
 | `lab.html?slug=` | Competitor | Individual lab briefing and challenges | Lab briefing, published challenges, solve status | Navigate to specific challenge targets | `GET /rooms/{slug}` |
@@ -226,7 +222,7 @@ ctf-arena/
 | `team.html` | Competitor | Squad management hub | Current squad members, secret invite code | Create squad, join by code, leave, kick members | `GET /teams/me`, `POST /teams`, `POST /teams/join`, `POST /teams/leave`, `POST /teams/{id}/regenerate-invite`, `DELETE /teams/{id}/members/{user_id}` |
 | `team-profile.html?id=` | Public | Public squad showcase | Squad roster, score, solve timeline | Inspect squad solve history | `GET /teams/{id}` |
 | `profile.html?username=` | Public | Public competitor profile | Display name, score, rank, solve records | Inspect competitor activity | `GET /users/{username}` |
-| `settings.html` | Competitor | Account settings | Profile details, password | Update display name, avatar, password | `GET /me`, `PATCH /me`, Supabase Auth `updateUser()` |
+| `settings.html` | Competitor | Account settings | Profile details | Update display name, avatar, or password without the old password | `GET /me`, `PATCH /me`, `POST /me/password` |
 | `404.html` | Public | Target not found fallback | None | Return to arena or lobby | None |
 | `admin/index.html` | Admin | Mission Operations Hub navigation | Overview metrics preview | Navigate administrative tools | `GET /admin/monitor/overview` |
 | `admin/monitor.html` | Admin | Operations Telemetry Center | Active online counts, completion rates, failure rates | Inspect live charts, review heuristic alerts | `GET /admin/monitor/overview`, `GET /admin/monitor/alerts` |
@@ -262,24 +258,11 @@ ctf-arena/
 - **Audit Event Feed**: Chronological log of security events (`flag_solved`, `flag_attempt_wrong`, `hint_unlocked`, `lab_completed`, `lab_opened`) with metadata (points awarded, hint penalties, attempt number).
 
 ### Competitor Progress Directory (`admin/progress.html`)
-- Shows every competitor, squad affiliation, online badge, labs completed, in progress, and not started, completion percentage bar, and total points.
-- **Search & Filters**: Search by username or display name, filter by status (`completed`, `in_progress`, `not_started`), or toggle `Online Only`.
-- **Export CSV**: Streams a sanitized CSV export (`/admin/monitor/export/users.csv`). Formula injection defense prepends `'` (single quote) to any cell beginning with `=`, `+`, `-`, `@`, `\t`, or `\r`.
 
 ### Competitor Audit Deep Dive (`admin/user.html?id=`)
-- Comprehensive audit of an individual competitor.
-- **Lab Cards**: For every published lab, inspect status badge, solved ratio, points earned, and total duration spent.
-- **Challenge Breakdown**: Inspect solve state, number of incorrect attempts, hints unlocked, and exact timestamp of capture.
-- **Unfinished Labs Summary**: Shows remaining unsolved labs and challenges required for 100% platform completion.
-- **Forensic Activity Feed**: Detailed chronological log of the user's platform interactions.
 
 ### Lab Cohort Telemetry (`admin/lab.html?id=`)
-- **Completed Cohort**: Competitors who completed 100% of published challenges in this lab, ranked by completion speed.
-- **In Progress Cohort**: Competitors currently working through challenges with partial solves.
-- **Not Started Cohort**: Competitors who have not opened or attempted challenges in this lab.
-- **Hardest Challenges Table**: Challenges sorted by lowest solve percentage and highest incorrect submission count.
-
-### Progress Matrix Heatmap (`admin/matrix.html`)
+- `POST /me/password`: Set the current user's new password without requiring their old password; requires a valid login session.
 - Two-dimensional grid with competitors or squads on the Y-axis and published labs on the X-axis.
 - Sticky left column and sticky headers for seamless horizontal navigation across large catalogs.
 - Color-coded cells:
@@ -451,13 +434,19 @@ Follow this guide to provision a fresh Supabase project for CTF Arena:
 5. **Private Storage Bucket Setup**:
    - Navigate to **Storage** and click **New Bucket**.
    - Name the bucket `challenge-files` and ensure the **Public bucket** toggle is **OFF** (Private).
-6. **Promote Initial Administrator**:
-   - Sign up for a user account through the frontend registration page (`signup.html`).
-   - Open the Supabase SQL Editor and execute:
+6. **Create or reset the administrator account without knowing its old password**:
+   - In Supabase, open **SQL Editor** and run this query, replacing the username and new password. It updates the Auth password hash directly; no previous password is needed.
      ```sql
-     UPDATE profiles SET role = 'admin' WHERE username = 'your_username';
+     UPDATE auth.users AS au
+     SET encrypted_password = crypt('replace-with-a-long-new-password', gen_salt('bf')),
+         updated_at = NOW()
+     FROM public.profiles AS p
+     WHERE p.id = au.id
+       AND p.username = 'admin';
      ```
-   - Refresh your browser; you now have full access to `/admin/` operations.
+   - Confirm the query reports one row. If it reports zero rows, look up the account in **Authentication > Users** and ensure the `profiles` row uses the same user ID. This reset changes the password hash but does not change the account role.
+   - To promote an existing account, use `UPDATE public.profiles SET role = 'admin' WHERE username = 'your_username';`.
+   - Log in at `/login` using the username and new password. Public registration and email-based recovery are disabled; administrators create accounts and set/reset user passwords from the admin panel.
 
 ---
 

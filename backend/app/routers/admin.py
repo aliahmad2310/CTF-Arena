@@ -261,6 +261,7 @@ async def admin_create_user(
             "email": f"{username}@users.ctf-arena.invalid",
             "password": payload.password,
             "email_confirm": True,
+            "phone_confirm": True,
             "user_metadata": {
                 "username": username,
                 "display_name": payload.display_name or username

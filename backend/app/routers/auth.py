@@ -15,7 +15,8 @@ from app.models.user import (
     PublicUserProfileResponse,
     UserSolveItem,
     UsernameLoginRequest,
-    UsernameLoginResponse
+    UsernameLoginResponse,
+    PasswordUpdateRequest
 )
 from app.models.common import MessageResponse
 
@@ -107,14 +108,10 @@ async def get_my_profile(current_user: Dict[str, Any] = Depends(get_current_user
     except Exception:
         pass
 
-    # Extract email from jwt payload if available
-    email = current_user.get("jwt_payload", {}).get("email")
-
     return UserProfileResponse(
         id=current_user["id"],
         username=current_user["username"],
         display_name=current_user["display_name"],
-        email=email,
         avatar_url=current_user.get("avatar_url"),
         role=current_user.get("role", "user"),
         team_id=current_user.get("team_id"),
@@ -125,6 +122,25 @@ async def get_my_profile(current_user: Dict[str, Any] = Depends(get_current_user
         rank=rank,
         created_at=current_user["created_at"]
     )
+
+
+@router.post("/me/password", response_model=MessageResponse)
+@limiter.limit("5/minute")
+async def update_my_password(
+    request: Request,
+    payload: PasswordUpdateRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Changes the current account password without requiring the old password."""
+    try:
+        get_supabase_client().auth.admin.update_user_by_id(
+            str(current_user["id"]),
+            {"password": payload.new_password}
+        )
+        return MessageResponse(message="Password updated successfully")
+    except Exception as exc:
+        logging.getLogger("ctf-arena.auth").exception("Password update failed: %s", exc)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Password update failed")
 
 
 @router.patch("/me", response_model=UserProfileResponse)
