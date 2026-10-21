@@ -128,18 +128,40 @@
   gap: var(--space-3);
 }
 
-.navbar-login-button {
+.navbar-user-control {
+  height: 44px;
   min-height: 44px;
-  padding: 0.75rem 1.6rem;
-  font-family: var(--font-mono);
-  font-size: var(--text-base);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  box-sizing: border-box;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: var(--text-xs);
+  padding: 0 1rem;
 }
 
-#logout-btn.navbar-login-button {
-  width: auto;
+.navbar-actions .navbar-user-control:not(.navbar-signout-button) {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.navbar-login-button {
+  height: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 0 1rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.navbar-actions .navbar-signout-button {
+  width: 44px;
+  padding: 0;
+}
+
+.navbar-user-control .text-green {
+  text-transform: none;
 }
 
 /* ------------------------------------------------------------------------------

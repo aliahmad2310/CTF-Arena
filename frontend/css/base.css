@@ -37,6 +37,10 @@ body {
   overflow-x: hidden;
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* ----------------------------------------------------------------------------
    Hardware Display Headings (Orbitron & Rajdhani with JetBrains Mono Numbers)
    ---------------------------------------------------------------------------- */

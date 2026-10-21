@@ -10,9 +10,14 @@ import { api } from "../api.js";
 import { showToast, showModal, closeModal } from "../ui.js";
 import { escapeHtml } from "../utils.js";
 
+if (window.location.pathname === "/admin/labs.html" && !window.location.search.includes("manage=1")) {
+  window.location.replace("/admin");
+}
+
 let labsList = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
+  if (window.location.pathname === "/admin/labs.html" && !window.location.search.includes("manage=1")) return;
   try {
     await requireAdmin();
   } catch {

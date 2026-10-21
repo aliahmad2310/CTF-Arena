@@ -9,27 +9,73 @@ import { initLayout } from "../layout.js";
 import { getUserProfile } from "../auth.js";
 import { initializeDashboard } from "./dashboard.js";
 import { escapeHtml } from "../utils.js";
+import { requireAdmin } from "../auth.js";
+import { showToast } from "../ui.js";
+import { supabase } from "../supabaseClient.js";
 
 let countdownInterval = null;
+let isAdminRoute = false;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const profile = await getUserProfile();
-  if (profile) {
-    if (profile.role === "admin") {
-      window.location.replace("/admin/index.html");
-      return;
+  const canEditChampionship = profile?.role === "admin";
+  isAdminRoute = window.location.pathname.startsWith("/admin");
+  if (isAdminRoute && !canEditChampionship) {
+    await redirectAdminRouteToHome();
+    return;
+  }
+  if (isAdminRoute) {
+    if (canEditChampionship) {
+      await initLayout();
+      document.body.classList.add("championship-admin-navbar");
     }
+    document.documentElement.classList.remove("admin-route-pending");
+  }
+
+  if (profile && !canEditChampionship) {
     await mountAuthenticatedDashboard(profile);
     return;
   }
 
-  await initLayout();
+  if (!isAdminRoute) await initLayout();
 
   await Promise.all([
     initCtfCountdown(),
     fetchTopTeamsPreview()
   ]);
+
+  if (canEditChampionship) {
+    try {
+      await requireAdmin();
+      bindChampionshipEditor();
+    } catch {
+      // Display remains public; only editing controls are withheld.
+    }
+  } else if (isAdminRoute) {
+    await redirectAdminRouteToHome();
+  }
 });
+
+supabase.auth.onAuthStateChange(async (_event, session) => {
+  if (!isAdminRoute) return;
+  if (!session) {
+    await redirectAdminRouteToHome();
+    return;
+  }
+  const profile = await getUserProfile(true, true);
+  if (profile?.role !== "admin") await redirectAdminRouteToHome();
+});
+
+let adminRedirectStarted = false;
+async function redirectAdminRouteToHome() {
+  if (adminRedirectStarted) return;
+  adminRedirectStarted = true;
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } finally {
+    window.location.replace("/");
+  }
+}
 
 async function mountAuthenticatedDashboard(profile) {
   try {
@@ -60,13 +106,18 @@ async function mountAuthenticatedDashboard(profile) {
 async function initCtfCountdown() {
   try {
     const status = await api.get("/ctf/status");
-    document.getElementById("ctf-title").textContent = status.title || "CTF Arena Championship";
+    document.getElementById("ctf-title").textContent = status.title || "CTF Arena Cyber Championship";
+    window.ctfChampionshipConfig = status;
 
     const statusBadge = document.getElementById("ctf-status-badge");
     const freezeBadge = document.getElementById("freeze-badge");
+    statusBadge.className = "badge badge-grey";
+    statusBadge.textContent = "Schedule not set";
 
     if (status.freeze_leaderboard) {
       freezeBadge.classList.remove("hidden");
+    } else {
+      freezeBadge.classList.add("hidden");
     }
 
     let targetDate = null;
@@ -85,13 +136,89 @@ async function initCtfCountdown() {
       statusBadge.textContent = "Competition Concluded";
     }
 
-    if (targetDate) {
+    if (countdownInterval) clearInterval(countdownInterval);
+    if (!targetDate && status.end_time && new Date(status.end_time) <= now) {
+      updateCountdownDisplay(new Date(status.end_time));
+    } else if (targetDate) {
       updateCountdownDisplay(targetDate);
       countdownInterval = setInterval(() => updateCountdownDisplay(targetDate), 1000);
+    } else {
+      ["days", "hours", "minutes", "seconds"].forEach((unit) => {
+        const element = document.getElementById(`countdown-${unit}`);
+        if (element) element.textContent = "00";
+      });
     }
   } catch (err) {
     console.warn("Could not query CTF status:", err);
   }
+  if (!window.ctfChampionshipConfig) {
+    window.ctfChampionshipConfig = { title: "CTF Arena Cyber Championship", start_time: null, end_time: null };
+  }
+}
+
+function bindChampionshipEditor() {
+  const form = document.getElementById("countdown-editor");
+  const title = document.getElementById("ctf-title");
+  if (!form || !title) return;
+  const config = window.ctfChampionshipConfig;
+  document.getElementById("navbar-root")?.classList.add("championship-admin-navbar");
+  const targetSelect = document.getElementById("editor-target");
+  const dateInput = document.getElementById("editor-date");
+  const dateLabel = document.getElementById("editor-date-label");
+
+  const localInput = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    const pad = (number) => String(number).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+  const edit = (part = null) => {
+    document.getElementById("editor-title").value = config.title || "CTF Arena Cyber Championship";
+    const key = config.start_time && new Date(config.start_time) > new Date() ? "start_time" : "end_time";
+    targetSelect.value = key;
+    dateLabel.textContent = key === "start_time" ? "Start date and time" : "End date and time";
+    dateInput.value = part ? localInput(config[key]) : "";
+    form.classList.remove("hidden");
+  };
+  title.addEventListener("dblclick", () => {
+    edit();
+    document.getElementById("editor-title").focus();
+    document.getElementById("editor-title").select();
+  });
+  document.querySelectorAll("[data-countdown-part]").forEach((node) => node.addEventListener("dblclick", () => edit(node.dataset.countdownPart)));
+  targetSelect.addEventListener("change", () => {
+    const key = targetSelect.value;
+    dateLabel.textContent = key === "start_time" ? "Start date and time" : "End date and time";
+    dateInput.value = localInput(config[key]);
+  });
+  document.getElementById("cancel-countdown-edit").addEventListener("click", () => {
+    form.reset();
+    form.classList.add("hidden");
+  });
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const newTitle = document.getElementById("editor-title").value.trim();
+    const key = targetSelect.value;
+    const selectedDate = dateInput.value ? new Date(dateInput.value) : null;
+    const start = key === "start_time" && selectedDate ? selectedDate : (config.start_time ? new Date(config.start_time) : null);
+    const end = key === "end_time" && selectedDate ? selectedDate : (config.end_time ? new Date(config.end_time) : null);
+    if (!newTitle || (dateInput.value && Number.isNaN(selectedDate?.getTime())) || (start && end && end <= start)) {
+      showToast("Enter a valid title and time; the end must follow the start.", "error");
+      return;
+    }
+    try {
+      const changes = { title: newTitle };
+      if (selectedDate) changes[key] = selectedDate.toISOString();
+      await api.patch("/admin/settings", changes);
+      config.title = newTitle;
+      if (selectedDate) config[key] = selectedDate.toISOString();
+      form.classList.add("hidden");
+      showToast("Championship updated", "success");
+      await initCtfCountdown();
+    } catch (error) {
+      showToast(error.message || "Could not update championship", "error");
+    }
+  });
 }
 
 function updateCountdownDisplay(targetDate) {

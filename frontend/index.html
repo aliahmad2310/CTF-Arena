@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CTF Arena - Cyber Defense Training Platform</title>
   <meta name="description" content="Next-generation Capture The Flag platform modeled after TryHackMe rooms. Attack real-world labs, capture flags, and conquer the live leaderboard.">
+  <script>if (window.location.pathname.startsWith("/admin")) document.documentElement.classList.add("admin-route-pending");</script>
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <link rel="stylesheet" href="/css/variables.css">
   <link rel="stylesheet" href="/css/base.css">
@@ -40,36 +41,46 @@
 
     <!-- CTF Competition Status & Countdown Banner -->
     <section class="card" style="margin-bottom: var(--space-12); background: linear-gradient(180deg, var(--bg-card), var(--bg-secondary)); border: 1px solid var(--border-medium);">
-      <div class="card-body" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-6); padding: var(--space-6);">
+      <div class="card-body championship-banner" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-6); padding: var(--space-6);">
         <div>
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
             <span id="ctf-status-badge" class="badge badge-green">Competition Active</span>
             <span id="freeze-badge" class="badge badge-grey hidden">Scoreboard Frozen</span>
           </div>
-          <h2 id="ctf-title" style="font-size: var(--text-xl); margin: 0;">CTF Arena Championship</h2>
+          <h2 id="ctf-title" class="championship-title" style="font-size: var(--text-xl); margin: 0;">CTF Arena Cyber Championship</h2>
         </div>
 
         <!-- Countdown Timer Blocks -->
-        <div style="display: flex; align-items: center; gap: var(--space-3);">
-          <div style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
+        <div class="championship-countdown" style="display: flex; align-items: center; gap: var(--space-3);">
+          <div class="championship-countdown-block" data-countdown-part="days" style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
             <div id="countdown-days" class="text-mono text-xl font-bold text-green">00</div>
             <div class="text-dim text-xs text-mono">DAYS</div>
           </div>
-          <div style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
+          <div class="championship-countdown-block" data-countdown-part="hours" style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
             <div id="countdown-hours" class="text-mono text-xl font-bold text-green">00</div>
             <div class="text-dim text-xs text-mono">HOURS</div>
           </div>
-          <div style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
+          <div class="championship-countdown-block" data-countdown-part="minutes" style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
             <div id="countdown-minutes" class="text-mono text-xl font-bold text-green">00</div>
             <div class="text-dim text-xs text-mono">MIN</div>
           </div>
-          <div style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
+          <div class="championship-countdown-block" data-countdown-part="seconds" style="text-align: center; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.5rem 0.8rem; min-width: 60px;">
             <div id="countdown-seconds" class="text-mono text-xl font-bold text-green">00</div>
             <div class="text-dim text-xs text-mono">SEC</div>
           </div>
         </div>
       </div>
     </section>
+
+    <form id="countdown-editor" class="card hidden" style="max-width:560px;margin:0 auto var(--space-8);text-align:left;">
+      <div class="card-body">
+        <h2 style="font-size:var(--text-lg);margin:0 0 var(--space-4);">Edit Championship</h2>
+        <div class="form-group"><label class="form-label" for="editor-title">Championship title</label><input id="editor-title" class="form-input" type="text" required minlength="3" maxlength="100"></div>
+        <div class="form-group"><label class="form-label" for="editor-target">Countdown target</label><select id="editor-target" class="form-select"><option value="start_time">Championship starts</option><option value="end_time">Championship ends</option></select></div>
+        <div class="form-group"><label id="editor-date-label" class="form-label" for="editor-date">Start date and time</label><input id="editor-date" class="form-input form-input-mono" type="datetime-local"><div class="form-helper">Leave the date blank to update only the title. Time uses your browser's local timezone and saves as UTC.</div></div>
+        <div style="display:flex;gap:var(--space-2);justify-content:flex-end;"><button id="cancel-countdown-edit" type="button" class="btn btn-secondary">Cancel</button><button id="save-countdown-edit" type="submit" class="btn btn-primary">Save</button></div>
+      </div>
+    </form>
 
     <!-- Top 5 Scoreboard Preview -->
     <section class="card" style="margin-bottom: var(--space-12);">

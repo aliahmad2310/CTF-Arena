@@ -8,6 +8,7 @@
 import { Icons } from "./icons.js";
 import { getUserProfile, signOut } from "./auth.js";
 import { CONFIG } from "./config.js";
+import { escapeHtml } from "./utils.js";
 
 /**
  * Initializes and mounts the common navigation bar and footer.
@@ -18,9 +19,6 @@ export async function initLayout({ skipProfile = false } = {}) {
   renderNavbar(profile);
   renderFooter();
 
-  if (window.location.pathname.includes("/admin/") || profile?.role === "admin") {
-    renderAdminSubNav();
-  }
 }
 
 function mountCircuitBackground() {
@@ -60,6 +58,10 @@ function renderNavbar(profile) {
   const isAuth = !!profile;
   const isAdmin = profile && profile.role === "admin";
 
+  if (isAdmin && currentPath.startsWith("/admin") && root.closest("body")?.classList.contains("admin-route-pending")) {
+    return;
+  }
+
   root.innerHTML = `
     <nav class="site-navbar">
       <div class="container navbar-inner">
@@ -69,26 +71,22 @@ function renderNavbar(profile) {
         </a>
 
         <ul class="navbar-nav">
-          <li><a href="/labs.html" class="nav-link ${currentPath.includes("/labs.html") || currentPath.includes("/lab.html") ? "active" : ""}">Labs</a></li>
+          <li><a href="${isAdmin ? "/admin/labs.html?manage=1" : "/labs.html"}" class="nav-link ${currentPath.includes("/labs.html") || currentPath.includes("/lab.html") ? "active" : ""}">Labs</a></li>
           <li><a href="/leaderboard.html" class="nav-link ${currentPath.includes("/leaderboard.html") ? "active" : ""}">Leaderboard</a></li>
           ${isAuth && !isAdmin ? `
             <li><a href="/team.html" class="nav-link ${currentPath.includes("/team.html") ? "active" : ""}">Team</a></li>
             <li><a href="/" class="nav-link ${currentPath === "/" || currentPath === "/index.html" ? "active" : ""}">Dashboard</a></li>
-          ` : ""}
-          ${isAdmin ? `
-            <li><a href="/admin/index.html" class="nav-link text-cyan ${currentPath === "/admin/" || currentPath.endsWith("/admin/index.html") ? "active" : ""}">Championship</a></li>
           ` : ""}
         </ul>
 
         <div class="navbar-actions">
           ${isAuth ? `
             <div style="display:flex; align-items:center; gap:0.75rem;">
-              <a href="/profile.html?username=${encodeURIComponent(profile.username)}" class="btn btn-sm btn-secondary" style="font-family:var(--font-mono);">
-                <span class="text-green">${profile.username}</span>
+              <a href="/profile.html?username=${encodeURIComponent(profile.username)}" class="btn btn-sm btn-secondary navbar-user-control" style="font-family:var(--font-mono);text-transform:none;letter-spacing:normal;">
+                <span class="text-green">${escapeHtml(profile.username)}</span>
                 ${!isAdmin ? `<span class="text-dim">(${profile.total_score !== undefined ? profile.total_score : 0} pts)</span>` : ""}
               </a>
-              <button type="button" id="logout-btn" class="btn btn-primary navbar-login-button" title="Sign out" aria-label="Sign out">
-                <span>Sign out</span>
+              <button type="button" id="logout-btn" class="btn btn-primary navbar-user-control navbar-signout-button" title="Sign out" aria-label="Sign out">
                 ${Icons.logOut(16)}
               </button>
             </div>
@@ -105,42 +103,6 @@ function renderNavbar(profile) {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => signOut());
   }
-}
-
-function renderAdminSubNav() {
-  const root = document.getElementById("admin-subnav-root");
-  if (!root) return;
-
-  const currentPath = window.location.pathname;
-
-  const tabs = [
-    { label: "Championship", path: "/admin/index.html" },
-    { label: "Overview", path: "/admin/monitor.html" },
-    { label: "Live Activity", path: "/admin/live.html" },
-    { label: "User Progress", path: "/admin/progress.html" },
-    { label: "Matrix Heatmap", path: "/admin/matrix.html" },
-    { label: "Manage Labs", path: "/admin/labs.html" },
-    { label: "Challenges", path: "/admin/challenges.html" },
-    { label: "Users", path: "/admin/users.html" },
-    { label: "Teams", path: "/admin/teams.html" },
-    { label: "Settings", path: "/admin/settings.html" }
-  ];
-
-  let itemsHtml = "";
-  tabs.forEach(tab => {
-    const isActive = currentPath.includes(tab.path);
-    itemsHtml += `
-      <a href="${tab.path}" class="admin-nav-item ${isActive ? "active" : ""}">
-        ${tab.label}
-      </a>
-    `;
-  });
-
-  root.innerHTML = `
-    <div class="admin-nav-bar">
-      ${itemsHtml}
-    </div>
-  `;
 }
 
 function renderFooter() {

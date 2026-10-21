@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   await initLayout();
+  document.getElementById("navbar-root")?.classList.add("championship-admin-navbar");
   await loadCountdown();
   bindEditor();
 });
@@ -27,13 +28,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function loadCountdown() {
   try {
     ctfConfig = await api.get("/ctf/status");
-    document.getElementById("championship-title").textContent = ctfConfig.title || "CTF Arena Championship";
+    document.getElementById("ctf-title").textContent = ctfConfig.title || "CTF Arena Championship";
     const target = getTargetDate(ctfConfig);
     const status = document.getElementById("championship-status");
     if (!target) {
       status.className = "badge badge-grey";
       status.textContent = "Schedule not set";
-      document.getElementById("countdown-label").textContent = "No championship start or end time is configured.";
       setCountdown(null);
       return;
     }
@@ -41,7 +41,6 @@ async function loadCountdown() {
     const starting = ctfConfig.start_time && new Date(ctfConfig.start_time).getTime() > Date.now();
     status.className = starting ? "badge badge-amber" : "badge badge-green";
     status.textContent = starting ? "Starting Soon" : "Competition Active";
-    document.getElementById("countdown-label").textContent = starting ? "Time until championship starts" : "Time until championship ends";
     setCountdown(target);
   } catch (err) {
     showToast(err.message || "Unable to load championship schedule", "error");
@@ -67,7 +66,6 @@ function setCountdown(target) {
     document.getElementById("countdown-minutes").textContent = String(minutes).padStart(2, "0");
     document.getElementById("countdown-seconds").textContent = String(seconds).padStart(2, "0");
     if (!target || remaining === 0) {
-      document.getElementById("countdown-label").textContent = target ? "Countdown complete" : "No countdown configured";
       if (countdownInterval) clearInterval(countdownInterval);
     }
   };
@@ -76,7 +74,6 @@ function setCountdown(target) {
 }
 
 function bindEditor() {
-  const countdown = document.getElementById("championship-countdown");
   const form = document.getElementById("countdown-editor");
   const targetSelect = document.getElementById("editor-target");
   const dateInput = document.getElementById("editor-date");
@@ -93,9 +90,22 @@ function bindEditor() {
     dateInput.focus();
   };
 
-  countdown.addEventListener("dblclick", openEditor);
-  countdown.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") openEditor();
+  document.getElementById("ctf-title").addEventListener("dblclick", () => {
+    openEditor();
+    document.getElementById("editor-title").focus();
+    document.getElementById("editor-title").select();
+  });
+  document.querySelectorAll(".championship-countdown-block").forEach((part) => {
+    part.addEventListener("dblclick", () => {
+      openEditor();
+      if (part.dataset.countdownPart === "days" || part.dataset.countdownPart === "hours") {
+        targetSelect.value = "start_time";
+      } else {
+        targetSelect.value = "end_time";
+      }
+      dateLabel.textContent = targetSelect.value === "start_time" ? "Start date and time" : "End date and time";
+      dateInput.value = toLocalInputValue(ctfConfig?.[targetSelect.value]);
+    });
   });
   targetSelect.addEventListener("change", () => {
     const key = targetSelect.value;
@@ -104,6 +114,9 @@ function bindEditor() {
   });
   document.getElementById("cancel-countdown-edit").addEventListener("click", () => {
     form.reset();
+    form.classList.add("hidden");
+  });
+  form.addEventListener("reset", () => {
     form.classList.add("hidden");
   });
   form.addEventListener("submit", async (event) => {
@@ -121,10 +134,13 @@ function bindEditor() {
     const endDate = targetKey === "end_time" ? targetDate : (ctfConfig.end_time ? new Date(ctfConfig.end_time) : null);
     if (startDate && endDate && endDate <= startDate) {
       showToast("Championship end time must be after its start time", "error");
+      saveButton.disabled = false;
       return;
     }
     try {
       await api.patch("/admin/settings", { title, [targetKey]: targetDate.toISOString() });
+      ctfConfig.title = title;
+      ctfConfig[targetKey] = targetDate.toISOString();
       form.classList.add("hidden");
       showToast("Championship schedule saved", "success");
       await loadCountdown();
