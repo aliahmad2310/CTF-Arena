@@ -16,7 +16,10 @@ class Settings(BaseSettings):
     # Supabase Configuration
     SUPABASE_URL: str = "https://your-project.supabase.co"
     SUPABASE_SERVICE_ROLE_KEY: str = "placeholder-service-role-key"
-    SUPABASE_ANON_KEY: str = "placeholder-anon-key"
+    # Supabase publishable keys are public by design. Keep the frontend's current
+    # publishable key as the fallback so username login works on hosts where the
+    # environment variable cannot be added; an environment value still overrides it.
+    SUPABASE_ANON_KEY: str = "sb_publishable_S4i-1fZoF50BuS2kZre4RA_p_a2Zx0L"
     SUPABASE_JWT_SECRET: str = "placeholder-jwt-secret"
 
     # CORS and Network
