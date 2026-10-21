@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from app.routers.admin import list_admin_teams, list_admin_users
+from app.services.team_service import insert_team_compatible
 
 
 class FakeQuery:
@@ -64,6 +65,57 @@ class FakeSupabase:
     def table(self, name):
         self.calls.append(("table", name))
         return FakeQuery(self.results[name], self.calls, name, self)
+
+
+class FakeInsertQuery:
+    def __init__(self, supabase, data):
+        self.supabase = supabase
+        self.data = data
+
+    def execute(self):
+        self.supabase.inserted.append(self.data)
+        if self.supabase.fail_max_members and "max_members" in self.data:
+            self.supabase.fail_max_members = False
+            raise RuntimeError("PGRST204 Could not find the 'max_members' column of 'teams' in the schema cache")
+        return SimpleNamespace(data=[{"id": "new-team", **self.data}])
+
+
+class FakeInsertSupabase:
+    def __init__(self):
+        self.fail_max_members = True
+        self.inserted = []
+
+    def table(self, _name):
+        return self
+
+    def insert(self, data):
+        return FakeInsertQuery(self, data)
+
+
+def test_team_insert_retries_without_max_members_only_for_schema_cache_error():
+    supabase = FakeInsertSupabase()
+    result = insert_team_compatible(supabase, {
+        "name": "New Team",
+        "invite_code": "INV-12345678",
+        "captain_id": None,
+        "max_members": 4,
+    })
+
+    assert len(supabase.inserted) == 2
+    assert supabase.inserted[0]["max_members"] == 4
+    assert "max_members" not in supabase.inserted[1]
+    assert result.data[0]["id"] == "new-team"
+
+
+def test_team_insert_requires_migration_for_non_default_capacity():
+    supabase = FakeInsertSupabase()
+    with pytest.raises(RuntimeError, match="Apply supabase/migrations/20261021_add_team_max_members.sql"):
+        insert_team_compatible(supabase, {
+            "name": "Large Team",
+            "invite_code": "INV-12345678",
+            "captain_id": None,
+            "max_members": 6,
+        })
 
 
 @pytest.mark.asyncio

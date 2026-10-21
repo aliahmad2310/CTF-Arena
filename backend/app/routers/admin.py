@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from app.core.deps import require_admin
 from app.db.client import get_supabase_client
 from app.core.security import compute_flag_hash
-from app.services.team_service import enforce_team_capacity
+from app.services.team_service import enforce_team_capacity, insert_team_compatible
 from app.models.common import MessageResponse, CtfStatusResponse
 from app.models.admin import (
     AdminRoomCreateRequest,
@@ -406,7 +406,16 @@ async def admin_create_user(
 
         if payload.team_id:
             team_id = str(payload.team_id)
-            team_res = supabase.table("teams").select("id, max_members").eq("id", team_id).limit(1).execute()
+            try:
+                team_res = supabase.table("teams").select("id, max_members").eq("id", team_id).limit(1).execute()
+            except Exception as exc:
+                error_text = str(exc).lower()
+                if "max_members" in error_text and ("pgrst204" in error_text or "schema cache" in error_text):
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="Team capacity cannot be changed until the database max_members migration is applied.",
+                    ) from exc
+                raise
             if not team_res.data:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
             max_size = team_res.data[0].get("max_members", 4)
@@ -633,7 +642,7 @@ async def admin_create_team(
     try:
         captain_id = None
         if payload.captain_username:
-            user_res = supabase.table("profiles").select("id, team_id").eq("username", payload.captain_username).limit(1).execute()
+            user_res = supabase.table("profiles").select("id, team_id").eq("username", payload.captain_username).eq("role", "user").limit(1).execute()
             if not user_res.data:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User '{payload.captain_username}' not found")
             if user_res.data[0].get("team_id"):
@@ -647,7 +656,7 @@ async def admin_create_team(
             "captain_id": captain_id,
             "max_members": payload.max_members,
         }
-        res = supabase.table("teams").insert(team_data).execute()
+        res = insert_team_compatible(supabase, team_data)
         if captain_id and res.data and len(res.data) > 0:
             new_team_id = res.data[0]["id"]
             supabase.table("profiles").update({"team_id": new_team_id}).eq("id", captain_id).execute()
@@ -656,6 +665,8 @@ async def admin_create_team(
     except HTTPException:
         raise
     except Exception as exc:
+        if "custom team capacity" in str(exc).lower():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
         if "unique" in str(exc).lower():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A team with this name already exists")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create team: {str(exc)}")
@@ -678,7 +689,16 @@ async def update_team_capacity(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Team currently has {members.count} members; capacity cannot be set below its current membership.",
         )
-    supabase.table("teams").update({"max_members": payload.max_members, "updated_at": datetime.now(timezone.utc).isoformat()}).eq("id", team_id).execute()
+        try:
+            supabase.table("teams").update({"max_members": payload.max_members, "updated_at": datetime.now(timezone.utc).isoformat()}).eq("id", team_id).execute()
+        except Exception as exc:
+            error_text = str(exc).lower()
+            if "max_members" in error_text and ("pgrst204" in error_text or "schema cache" in error_text):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Team capacity cannot be changed until the database max_members migration is applied.",
+                ) from exc
+            raise
     return MessageResponse(message="Team capacity updated")
 
 

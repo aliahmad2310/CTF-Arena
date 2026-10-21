@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.deps import get_current_user
 from app.db.client import get_supabase_client
-from app.services.team_service import enforce_team_capacity
+from app.services.team_service import enforce_team_capacity, insert_team_compatible
 from app.models.team import (
     TeamCreateRequest,
     TeamUpdateRequest,
@@ -99,15 +99,18 @@ async def create_team(
     invite_code = generate_invite_code()
 
     try:
-        settings_res = supabase.table("ctf_settings").select("max_team_size").eq("id", 1).limit(1).execute()
-        default_team_capacity = settings_res.data[0].get("max_team_size", 4) if settings_res.data else 4
+        try:
+            settings_res = supabase.table("ctf_settings").select("max_team_size").eq("id", 1).limit(1).execute()
+            default_team_capacity = settings_res.data[0].get("max_team_size", 4) if settings_res.data else 4
+        except Exception:
+            default_team_capacity = 4
         # Create team record
-        team_insert_res = supabase.table("teams").insert({
+        team_insert_res = insert_team_compatible(supabase, {
             "name": team_name,
             "invite_code": invite_code,
             "captain_id": user_id,
             "max_members": default_team_capacity,
-        }).execute()
+        })
 
         if not team_insert_res.data or len(team_insert_res.data) == 0:
             raise HTTPException(

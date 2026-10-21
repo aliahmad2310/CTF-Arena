@@ -40,13 +40,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 let currentPage = 1;
 let totalPages = 1;
-const PAGE_SIZE = 25;
+let cachedTeams = [];
+const PAGE_SIZE = 6;
 
 function initCreateUserBtn() {
   const btn = document.getElementById("create-user-btn");
   if (!btn) return;
 
-  btn.onclick = () => {
+  btn.onclick = async () => {
+    if (!cachedTeams.length) {
+      try {
+        const teams = await api.get("/admin/teams", { page: 1, page_size: 100 });
+        cachedTeams = teams.items || [];
+      } catch (err) {
+        showToast(err.message || "Unable to load teams for the account form", "error");
+        return;
+      }
+    }
     const availableTeams = cachedTeams.filter((team) => team.id);
     showModal({
       title: "Create User Account",
@@ -123,13 +133,11 @@ function initCreateUserBtn() {
 async function loadUsers() {
   const tbody = document.getElementById("users-tbody");
   try {
-    const [users, teams] = await Promise.all([
-      api.get("/admin/users", { page: currentPage, page_size: PAGE_SIZE, q: document.getElementById("users-search")?.value.trim() }),
-      !cachedTeams.length
-        ? api.get("/admin/teams", { page: 1, page_size: 100 })
-        : Promise.resolve({ items: cachedTeams })
-    ]);
-    if (teams.items) cachedTeams = teams.items;
+    const users = await api.get("/admin/users", {
+      page: currentPage,
+      page_size: PAGE_SIZE,
+      q: document.getElementById("users-search")?.value.trim()
+    });
     totalPages = Math.max(1, Math.ceil(users.total / PAGE_SIZE));
     renderUsers(users.items);
     renderPagination(users.total);
@@ -138,13 +146,11 @@ async function loadUsers() {
   }
 }
 
-let cachedTeams = [];
-
 function renderPagination(total) {
   const info = document.getElementById("users-page-info");
   const start = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const end = Math.min(currentPage * PAGE_SIZE, total);
-  if (info) info.textContent = `Showing ${start}-${end} of ${total} accounts`;
+  if (info) info.textContent = `Page ${currentPage} of ${totalPages} | ${start}-${end} of ${total} accounts`;
   const prev = document.getElementById("users-prev");
   const next = document.getElementById("users-next");
   if (prev) prev.disabled = currentPage <= 1;
@@ -188,9 +194,6 @@ function renderUsers(users) {
             Reset Password
           </button>
           ${u.role !== "admin" ? `
-            <button type="button" class="btn btn-sm ${isBanned ? "btn-secondary" : "btn-outline"} ban-toggle-btn" data-id="${u.id}" data-username="${escapeHtml(u.username)}" data-banned="${isBanned}">
-              ${isBanned ? "Restore" : "Suspend"}
-            </button>
             <button type="button" class="btn btn-sm btn-danger delete-user-btn" data-id="${u.id}" data-username="${escapeHtml(u.username)}">
               Delete
             </button>
@@ -262,25 +265,4 @@ function renderUsers(users) {
     };
   });
 
-  // Bind ban toggle handlers
-  tbody.querySelectorAll(".ban-toggle-btn").forEach((btn) => {
-    btn.onclick = () => {
-      const userId = btn.getAttribute("data-id");
-      const username = btn.getAttribute("data-username");
-      const isCurrentlyBanned = btn.getAttribute("data-banned") === "true";
-      const nextAction = isCurrentlyBanned ? "lift the suspension on" : "suspend";
-
-      showModal({
-        title: isCurrentlyBanned ? "Restore Access" : "Suspend Competitor",
-        contentHtml: `<p>Are you sure you want to <strong>${nextAction}</strong> account <strong>${username}</strong>?</p>`,
-        confirmText: isCurrentlyBanned ? "Restore Access" : "Enforce Suspension",
-        onConfirm: async () => {
-          await api.post(`/admin/users/${userId}/ban`, { is_banned: !isCurrentlyBanned });
-          showToast(`Account status updated for ${username}`, "info");
-          await loadUsers();
-          return true;
-        }
-      });
-    };
-  });
 }
