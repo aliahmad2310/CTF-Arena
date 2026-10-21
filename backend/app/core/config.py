@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     )
 
     # Supabase Configuration
-    SUPABASE_URL: str = "https://your-project.supabase.co"
+    SUPABASE_URL: str = "https://eaqqitgsvvrsvxqtvsle.supabase.co"
     SUPABASE_SERVICE_ROLE_KEY: str = "placeholder-service-role-key"
     # Supabase publishable keys are public by design. Keep the frontend's current
     # publishable key as the fallback so username login works on hosts where the

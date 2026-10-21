@@ -23,22 +23,27 @@ from app.models.common import MessageResponse
 router = APIRouter(prefix="", tags=["User Profile & Authentication"])
 
 
+def _admin_auth_client():
+    """Create a project auth client with a configured public key or backend fallback."""
+    api_key = settings.SUPABASE_ANON_KEY
+    if not api_key or api_key.startswith("placeholder-"):
+        api_key = get_supabase_client().supabase_key
+    return create_client(settings.SUPABASE_URL, api_key)
+
+
 @router.post("/auth/login", response_model=UsernameLoginResponse)
 @limiter.limit("10/minute")
 async def login_with_username(request: Request, payload: UsernameLoginRequest):
     """Authenticates a username/password pair without exposing the account email."""
-    if not settings.SUPABASE_ANON_KEY or settings.SUPABASE_ANON_KEY.startswith("placeholder-"):
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Username login is not configured on the server. Contact the administrator."
-        )
-
     supabase = get_supabase_client()
     try:
         profile_res = supabase.table("profiles").select("id, is_banned").eq(
             "username", payload.username.lower()
         ).limit(1).execute()
         if not profile_res.data:
+            logging.getLogger("ctf-arena.auth").warning(
+                "Login rejected: username was not found in the backend-configured Supabase project"
+            )
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 
         profile = profile_res.data[0]
@@ -48,11 +53,14 @@ async def login_with_username(request: Request, payload: UsernameLoginRequest):
         auth_user = supabase.auth.admin.get_user_by_id(str(profile["id"]))
         account_email = getattr(auth_user.user, "email", None)
         if not account_email:
+            logging.getLogger("ctf-arena.auth").error(
+                "Login rejected: Auth user for profile ID is missing an email login identifier"
+            )
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 
         # Use the configured public key and a fresh client so concurrent sign-ins
         # cannot overwrite shared server-side auth state.
-        auth_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+        auth_client = _admin_auth_client()
         auth_response = auth_client.auth.sign_in_with_password({
             "email": account_email,
             "password": payload.password
@@ -70,14 +78,15 @@ async def login_with_username(request: Request, payload: UsernameLoginRequest):
     except HTTPException:
         raise
     except Exception as exc:
-        # Return the same response for unknown users and bad credentials.
-        # Log operational details server-side without exposing account data.
-        logging.getLogger("ctf-arena.auth").exception("Username login failed: %s", exc)
+        # Preserve a generic response for invalid credentials; report server
+        # project/key mismatches as configuration failures instead of blaming users.
+        logger = logging.getLogger("ctf-arena.auth")
         error_text = str(exc).lower()
-        if "api key" in error_text or "supabase_anon_key" in error_text:
+        logger.exception("Username login failed")
+        if any(marker in error_text for marker in ("api key", "supabase_anon_key", "invalid jwt", "invalid api key", "project not found")):
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Username login is not configured on the server. Contact the administrator."
+                detail="Authentication service configuration is invalid. Check backend Supabase URL and keys."
             )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 
