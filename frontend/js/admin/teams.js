@@ -19,8 +19,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await initLayout();
   initCreateTeamBtn();
+  document.getElementById("teams-search")?.addEventListener("input", debounce(() => {
+    currentPage = 1;
+    void loadTeams();
+  }, 250));
+  document.getElementById("teams-prev")?.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage -= 1;
+      void loadTeams();
+    }
+  });
+  document.getElementById("teams-next")?.addEventListener("click", () => {
+    if (currentPage < totalPages) {
+      currentPage += 1;
+      void loadTeams();
+    }
+  });
   await loadTeams();
 });
+
+import { debounce } from "../utils.js";
+
+let currentPage = 1;
+let totalPages = 1;
+const PAGE_SIZE = 25;
 
 function initCreateTeamBtn() {
   const btn = document.getElementById("create-team-btn");
@@ -80,17 +102,32 @@ async function loadTeams() {
   const tbody = document.getElementById("teams-tbody");
   try {
     const [teams, users] = await Promise.all([
-      api.get("/admin/teams"),
-      api.get("/admin/users")
+      api.get("/admin/teams", { page: currentPage, page_size: PAGE_SIZE, q: document.getElementById("teams-search")?.value.trim() }),
+      !cachedUsers.length
+        ? api.get("/admin/users", { page: 1, page_size: 100, unassigned: true })
+        : Promise.resolve({ items: cachedUsers })
     ]);
-    cachedUsers = users.filter((user) => user.role === "user");
-    renderTeams(teams);
+    if (users.items) cachedUsers = users.items.filter((user) => user.role === "user");
+    totalPages = Math.max(1, Math.ceil(teams.total / PAGE_SIZE));
+    renderTeams(teams.items);
+    renderPagination(teams.total);
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
 let cachedUsers = [];
+
+function renderPagination(total) {
+  const info = document.getElementById("teams-page-info");
+  const start = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const end = Math.min(currentPage * PAGE_SIZE, total);
+  if (info) info.textContent = `Showing ${start}-${end} of ${total} teams`;
+  const prev = document.getElementById("teams-prev");
+  const next = document.getElementById("teams-next");
+  if (prev) prev.disabled = currentPage <= 1;
+  if (next) next.disabled = currentPage >= totalPages;
+}
 
 function renderTeams(teams) {
   const tbody = document.getElementById("teams-tbody");
@@ -169,6 +206,7 @@ function renderTeams(teams) {
           }
           try {
             await api.post(`/admin/teams/${teamId}/members`, { username });
+            cachedUsers = cachedUsers.filter((user) => user.username !== username);
             showToast(`User '${username}' added to '${teamName}'`, "success");
             await loadTeams();
             return true;

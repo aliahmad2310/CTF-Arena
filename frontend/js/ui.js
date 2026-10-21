@@ -105,11 +105,20 @@ export function showModal({ title, contentHtml, confirmText = "Confirm", cancelT
 
   if (confirmBtn && onConfirm) {
     confirmBtn.addEventListener("click", async () => {
+      const form = backdrop.querySelector("form");
+      if (form && !form.reportValidity()) return;
+
       confirmBtn.disabled = true;
       confirmBtn.textContent = "Processing...";
       try {
-        await onConfirm();
-        closeModal();
+        const shouldClose = await onConfirm();
+        if (shouldClose !== false) {
+          closeModal();
+          return;
+        }
+
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = confirmText;
       } catch (err) {
         confirmBtn.disabled = false;
         confirmBtn.textContent = confirmText;

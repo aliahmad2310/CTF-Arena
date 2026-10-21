@@ -36,6 +36,11 @@
 
     <!-- Users Table Card -->
     <div class="card">
+      <div class="card-header" style="display:flex;gap:var(--space-3);align-items:center;justify-content:space-between;flex-wrap:wrap;">
+        <label class="sr-only" for="users-search">Search accounts</label>
+        <input id="users-search" type="search" class="form-input" placeholder="Search username or display name" style="max-width:24rem;">
+        <span id="users-page-info" class="text-dim text-xs" aria-live="polite">Showing 0 accounts</span>
+      </div>
       <div class="table-container" style="border: none; border-radius: 0;">
         <table class="data-table">
           <thead>
@@ -57,6 +62,10 @@
             </tr>
           </tbody>
         </table>
+      </div>
+      <div class="card-footer" style="display:flex;justify-content:flex-end;gap:var(--space-2);">
+        <button id="users-prev" type="button" class="btn btn-secondary btn-xs" disabled>Previous</button>
+        <button id="users-next" type="button" class="btn btn-secondary btn-xs" disabled>Next</button>
       </div>
     </div>
   </main>

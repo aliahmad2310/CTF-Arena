@@ -9,6 +9,63 @@ import { CONFIG } from "./config.js";
 import { supabase } from "./supabaseClient.js";
 import { showToast } from "./ui.js";
 
+const PUBLIC_CACHE_TTL_MS = 20_000;
+const PUBLIC_CACHE_STORAGE_PREFIX = "ctf-arena-public-api:";
+const publicGetCache = new Map();
+
+function isCacheablePublicGet(path, options) {
+  const method = (options.method || "GET").toUpperCase();
+  const pathname = path.split("?", 1)[0];
+  const publicLeaderboard = pathname === "/leaderboard/teams"
+      || pathname === "/leaderboard/users"
+      || pathname === "/leaderboard/timeline";
+  const anonymousPublicData = (pathname === "/rooms" || pathname === "/ctf/status")
+    && !new Headers(options.headers || {}).has("Authorization");
+  return method === "GET" && (publicLeaderboard || anonymousPublicData);
+}
+
+function readPublicCache(url) {
+  const memoryEntry = publicGetCache.get(url);
+  if (memoryEntry && memoryEntry.expiresAt > Date.now()) return memoryEntry;
+  if (memoryEntry) publicGetCache.delete(url);
+
+  try {
+    const stored = sessionStorage.getItem(`${PUBLIC_CACHE_STORAGE_PREFIX}${url}`);
+    if (!stored) return null;
+    const entry = JSON.parse(stored);
+    if (entry.expiresAt <= Date.now()) {
+      sessionStorage.removeItem(`${PUBLIC_CACHE_STORAGE_PREFIX}${url}`);
+      return null;
+    }
+    publicGetCache.set(url, entry);
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
+function writePublicCache(url, value) {
+  const entry = { value, expiresAt: Date.now() + PUBLIC_CACHE_TTL_MS };
+  publicGetCache.set(url, entry);
+  try {
+    sessionStorage.setItem(`${PUBLIC_CACHE_STORAGE_PREFIX}${url}`, JSON.stringify(entry));
+  } catch {
+    // Storage can be disabled or full; the in-memory cache remains available.
+  }
+}
+
+function invalidatePublicGetCache() {
+  publicGetCache.clear();
+  try {
+    for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+      const key = sessionStorage.key(index);
+      if (key?.startsWith(PUBLIC_CACHE_STORAGE_PREFIX)) sessionStorage.removeItem(key);
+    }
+  } catch {
+    // Cache invalidation in memory still applies when session storage is unavailable.
+  }
+}
+
 /**
  * Executes an HTTP request against the FastAPI backend with Bearer JWT authentication.
  * @param {string} endpoint
@@ -40,9 +97,17 @@ export async function apiFetch(endpoint, options = {}) {
     headers
   };
 
+  const cacheable = isCacheablePublicGet(endpoint, config);
+  if (cacheable) {
+    const cached = readPublicCache(url);
+    if (cached) return cached.value;
+  }
+
+  const fetchPromise = fetch(url, config);
+
   let response;
   try {
-    response = await fetch(url, config);
+    response = await fetchPromise;
   } catch (netErr) {
     showToast("Network connection error. Is the backend server running?", "error");
     throw new Error(`Network error: ${netErr.message}`);
@@ -84,7 +149,11 @@ export async function apiFetch(endpoint, options = {}) {
   // Check if content is JSON
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.includes("application/json")) {
-    return await response.json();
+    const data = await response.json();
+    if (cacheable && response.ok) {
+      writePublicCache(url, data);
+    }
+    return data;
   }
 
   return response;
@@ -106,23 +175,39 @@ export const api = {
     return apiFetch(url, { ...options, method: "GET" });
   },
 
-  post: (path, body, options = {}) => apiFetch(path, {
-    ...options,
-    method: "POST",
-    body: body instanceof FormData ? body : JSON.stringify(body)
-  }),
+  post: async (path, body, options = {}) => {
+    const result = await apiFetch(path, {
+      ...options,
+      method: "POST",
+      body: body instanceof FormData ? body : JSON.stringify(body)
+    });
+    invalidatePublicGetCache();
+    return result;
+  },
 
-  patch: (path, body) => apiFetch(path, {
-    method: "PATCH",
-    body: body instanceof FormData ? body : JSON.stringify(body)
-  }),
+  patch: async (path, body) => {
+    const result = await apiFetch(path, {
+      method: "PATCH",
+      body: body instanceof FormData ? body : JSON.stringify(body)
+    });
+    invalidatePublicGetCache();
+    return result;
+  },
 
-  put: (path, body) => apiFetch(path, {
-    method: "PUT",
-    body: body instanceof FormData ? body : JSON.stringify(body)
-  }),
+  put: async (path, body) => {
+    const result = await apiFetch(path, {
+      method: "PUT",
+      body: body instanceof FormData ? body : JSON.stringify(body)
+    });
+    invalidatePublicGetCache();
+    return result;
+  },
 
-  delete: (path) => apiFetch(path, { method: "DELETE" }),
+  delete: async (path) => {
+    const result = await apiFetch(path, { method: "DELETE" });
+    invalidatePublicGetCache();
+    return result;
+  },
 
   download: async (path, filename) => {
     const response = await apiFetch(path, { method: "GET" });

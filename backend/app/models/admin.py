@@ -108,6 +108,42 @@ class AdminUserCreateRequest(BaseModel):
     team_id: Optional[UUID] = None
 
 
+class AdminUserListItem(BaseModel):
+    id: UUID
+    username: str
+    display_name: str
+    role: str
+    is_banned: bool
+    team_id: Optional[UUID] = None
+    last_seen_at: datetime
+    created_at: datetime
+    teams: Optional[dict] = None
+
+
+class AdminUserListResponse(BaseModel):
+    items: List[AdminUserListItem]
+    total: int
+    page: int
+    page_size: int
+
+
+class AdminTeamListItem(BaseModel):
+    id: UUID
+    name: str
+    captain_id: Optional[UUID] = None
+    max_members: int
+    created_at: datetime
+    profiles: Optional[dict] = None
+    members: List[dict] = []
+
+
+class AdminTeamListResponse(BaseModel):
+    items: List[AdminTeamListItem]
+    total: int
+    page: int
+    page_size: int
+
+
 class AdminUserResetPasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=6, max_length=128)
 

@@ -1,4 +1,5 @@
 import secrets
+import re
 from typing import Dict, Any, List, Optional
 from uuid import UUID
 from datetime import datetime, timezone
@@ -21,7 +22,9 @@ from app.models.admin import (
     AdminCtfSettingsUpdateRequest,
     AdminUserBanRequest,
     AdminUserCreateRequest,
+    AdminUserListResponse,
     AdminUserResetPasswordRequest,
+    AdminTeamListResponse,
     AdminTeamCreateRequest,
     AdminTeamCapacityRequest,
     AdminTeamMemberRequest
@@ -329,15 +332,27 @@ async def delete_hint(
 # ==============================================================================
 # 4. Users Operations
 # ==============================================================================
-@router.get("/users")
+@router.get("/users", response_model=AdminUserListResponse)
 async def list_admin_users(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    q: Optional[str] = Query(None, max_length=80),
+    unassigned: bool = Query(False),
     admin: Dict[str, Any] = Depends(require_admin)
 ):
     supabase = get_supabase_client()
-    res = supabase.table("profiles").select(
-        "id, username, display_name, role, is_banned, team_id, last_seen_at, created_at, teams(name)"
-    ).order("created_at", desc=True).execute()
-    return res.data or []
+    query = supabase.table("profiles").select(
+        "id, username, display_name, role, is_banned, team_id, last_seen_at, created_at, teams!profiles_team_id_fkey(name)",
+        count="exact",
+    ).order("created_at", desc=True)
+    if unassigned:
+        query = query.is_("team_id", "null")
+    if q and q.strip():
+        search = re.sub(r"[^a-zA-Z0-9 _-]", "", q).strip()
+        if search:
+            query = query.or_(f"username.ilike.%{search}%,display_name.ilike.%{search}%")
+    res = query.range((page - 1) * page_size, page * page_size - 1).execute()
+    return {"items": res.data or [], "total": res.count or 0, "page": page, "page_size": page_size}
 
 
 @router.post("/users/{id}/ban", response_model=MessageResponse)
@@ -509,25 +524,36 @@ async def admin_reset_user_password(
 # ==============================================================================
 # 5. Teams Operations
 # ==============================================================================
-@router.get("/teams")
+@router.get("/teams", response_model=AdminTeamListResponse)
 async def list_admin_teams(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    q: Optional[str] = Query(None, max_length=80),
     admin: Dict[str, Any] = Depends(require_admin)
 ):
     supabase = get_supabase_client()
-    res = supabase.table("teams").select(
-        "id, name, invite_code, captain_id, max_members, created_at, profiles!fk_teams_captain(username)"
-    ).order("created_at", desc=True).execute()
+    query = supabase.table("teams").select(
+        "id, name, captain_id, max_members, created_at, profiles!fk_teams_captain(username)"
+        , count="exact"
+    ).order("created_at", desc=True)
+    if q and q.strip():
+        search = re.sub(r"[^a-zA-Z0-9 _-]", "", q).strip()
+        if search:
+            query = query.ilike("name", f"%{search}%")
+    res = query.range((page - 1) * page_size, page * page_size - 1).execute()
     teams = res.data or []
-    profiles_res = supabase.table("profiles").select("id, username, team_id").not_.is_("team_id", "null").execute()
+    team_ids = [str(team["id"]) for team in teams]
     members_by_team: Dict[str, List[Dict[str, Any]]] = {}
-    for profile in profiles_res.data or []:
-        members_by_team.setdefault(str(profile["team_id"]), []).append({
-            "id": profile["id"],
-            "username": profile["username"]
-        })
+    if team_ids:
+        profiles_res = supabase.table("profiles").select("id, username, team_id").in_("team_id", team_ids).execute()
+        for profile in profiles_res.data or []:
+            members_by_team.setdefault(str(profile["team_id"]), []).append({
+                "id": profile["id"],
+                "username": profile["username"]
+            })
     for team in teams:
         team["members"] = members_by_team.get(str(team["id"]), [])
-    return teams
+    return {"items": teams, "total": res.count or 0, "page": page, "page_size": page_size}
 
 
 @router.post("/teams", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)

@@ -27,19 +27,19 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+
+@app.exception_handler(Exception)
+async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+    """Log unexpected failures and return a generic response without leaking internals."""
+    logger.exception("Unhandled API error for %s %s", request.method, request.url.path, exc_info=exc)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "An unexpected server error occurred"},
+    )
+
 # Attach slowapi rate limiter to FastAPI state
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# Configure CORS Middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["Content-Disposition"]
-)
 
 # Register API Routers
 app.include_router(auth.router)
@@ -104,3 +104,17 @@ async def get_ctf_status():
         leaderboard_refresh_seconds=15,
         server_time=datetime.now(timezone.utc)
     )
+
+
+# Keep CORS outside Starlette's server-error middleware so generated 500
+# responses also receive CORS headers. Otherwise browsers hide the useful
+# JSON error and report only a CORS failure.
+fastapi_app = app
+app = CORSMiddleware(
+    app=fastapi_app,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
+)

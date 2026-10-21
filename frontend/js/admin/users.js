@@ -8,7 +8,7 @@ import { requireAdmin } from "../auth.js";
 import { initLayout } from "../layout.js";
 import { api } from "../api.js";
 import { showToast, showModal } from "../ui.js";
-import { escapeHtml, formatDate } from "../utils.js";
+import { debounce, escapeHtml, formatDate } from "../utils.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
@@ -19,8 +19,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await initLayout();
   initCreateUserBtn();
+  document.getElementById("users-search")?.addEventListener("input", debounce(() => {
+    currentPage = 1;
+    void loadUsers();
+  }, 250));
+  document.getElementById("users-prev")?.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage -= 1;
+      void loadUsers();
+    }
+  });
+  document.getElementById("users-next")?.addEventListener("click", () => {
+    if (currentPage < totalPages) {
+      currentPage += 1;
+      void loadUsers();
+    }
+  });
   await loadUsers();
 });
+
+let currentPage = 1;
+let totalPages = 1;
+const PAGE_SIZE = 25;
 
 function initCreateUserBtn() {
   const btn = document.getElementById("create-user-btn");
@@ -42,7 +62,7 @@ function initCreateUserBtn() {
           </div>
           <div class="form-group">
             <label class="form-label" for="cu-display-name">Display Name (Optional)</label>
-            <input type="text" id="cu-display-name" class="form-input" placeholder="Callsign or Name">
+            <input type="text" id="cu-display-name" class="form-input" maxlength="50" placeholder="Callsign or Name">
           </div>
           <div class="form-group">
             <label class="form-label" for="cu-password">Initial Password</label>
@@ -104,17 +124,32 @@ async function loadUsers() {
   const tbody = document.getElementById("users-tbody");
   try {
     const [users, teams] = await Promise.all([
-      api.get("/admin/users"),
-      api.get("/admin/teams")
+      api.get("/admin/users", { page: currentPage, page_size: PAGE_SIZE, q: document.getElementById("users-search")?.value.trim() }),
+      !cachedTeams.length
+        ? api.get("/admin/teams", { page: 1, page_size: 100 })
+        : Promise.resolve({ items: cachedTeams })
     ]);
-    cachedTeams = teams;
-    renderUsers(users);
+    if (teams.items) cachedTeams = teams.items;
+    totalPages = Math.max(1, Math.ceil(users.total / PAGE_SIZE));
+    renderUsers(users.items);
+    renderPagination(users.total);
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
 let cachedTeams = [];
+
+function renderPagination(total) {
+  const info = document.getElementById("users-page-info");
+  const start = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const end = Math.min(currentPage * PAGE_SIZE, total);
+  if (info) info.textContent = `Showing ${start}-${end} of ${total} accounts`;
+  const prev = document.getElementById("users-prev");
+  const next = document.getElementById("users-next");
+  if (prev) prev.disabled = currentPage <= 1;
+  if (next) next.disabled = currentPage >= totalPages;
+}
 
 function renderUsers(users) {
   const tbody = document.getElementById("users-tbody");
