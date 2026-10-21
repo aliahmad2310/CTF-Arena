@@ -8,7 +8,7 @@ import { requireAdmin } from "../auth.js";
 import { initLayout } from "../layout.js";
 import { api } from "../api.js";
 import { showToast, showModal } from "../ui.js";
-import { escapeHtml, formatDate } from "../utils.js";
+import { debounce, escapeHtml, formatDate } from "../utils.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
@@ -37,8 +37,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   await loadTeams();
 });
-
-import { debounce } from "../utils.js";
 
 let currentPage = 1;
 let totalPages = 1;
@@ -104,10 +102,10 @@ async function loadTeams() {
     const [teams, users] = await Promise.all([
       api.get("/admin/teams", { page: currentPage, page_size: PAGE_SIZE, q: document.getElementById("teams-search")?.value.trim() }),
       !cachedUsers.length
-        ? api.get("/admin/users", { page: 1, page_size: 100, unassigned: true })
+        ? api.get("/admin/users", { page: 1, page_size: 100 })
         : Promise.resolve({ items: cachedUsers })
     ]);
-    if (users.items) cachedUsers = users.items.filter((user) => user.role === "user");
+    if (users.items) cachedUsers = users.items.filter((user) => user.role === "user" && !user.team_id);
     totalPages = Math.max(1, Math.ceil(teams.total / PAGE_SIZE));
     renderTeams(teams.items);
     renderPagination(teams.total);

@@ -7,13 +7,21 @@ from app.routers.admin import list_admin_teams, list_admin_users
 
 
 class FakeQuery:
-    def __init__(self, result, calls):
+    def __init__(self, result, calls, table_name, supabase):
         self.result = result
         self.calls = calls
         self.count = len(result)
+        self.table_name = table_name
+        self.supabase = supabase
+        self.selected_columns = ""
 
     def select(self, columns, **kwargs):
+        self.selected_columns = columns
         self.calls.append(("select", columns, kwargs))
+        return self
+
+    def eq(self, column, value):
+        self.calls.append(("eq", column, value))
         return self
 
     def order(self, column, **kwargs):
@@ -41,17 +49,21 @@ class FakeQuery:
         return self
 
     def execute(self):
+        if self.table_name == "teams" and "max_members" in self.selected_columns and self.supabase.fail_legacy_team_column:
+            self.supabase.fail_legacy_team_column = False
+            raise RuntimeError('column teams.max_members does not exist')
         return SimpleNamespace(data=self.result, count=self.count)
 
 
 class FakeSupabase:
-    def __init__(self, results):
+    def __init__(self, results, fail_legacy_team_column=False):
         self.results = results
         self.calls = []
+        self.fail_legacy_team_column = fail_legacy_team_column
 
     def table(self, name):
         self.calls.append(("table", name))
-        return FakeQuery(self.results[name], self.calls)
+        return FakeQuery(self.results[name], self.calls, name, self)
 
 
 @pytest.mark.asyncio
@@ -72,6 +84,7 @@ async def test_admin_users_query_returns_page_and_resolves_team_names_separately
     }
     assert all("teams!" not in call[1] for call in supabase.calls if call[0] == "select")
     assert any(call[:2] == ("table", "teams") for call in supabase.calls)
+    assert ("eq", "role", "user") in supabase.calls
     assert ("range", 25, 49) in supabase.calls
     assert any(call[0] == "or" for call in supabase.calls)
 
@@ -84,7 +97,7 @@ async def test_admin_teams_query_excludes_invite_code_and_scopes_member_query():
         "name": "Blue Team",
         "captain_id": "user-1",
     }
-    member = {"id": "user-1", "username": "captain", "team_id": team_id}
+    member = {"id": "user-1", "username": "captain", "team_id": team_id, "role": "user"}
     supabase = FakeSupabase({"teams": [team], "profiles": [member]})
 
     with patch("app.routers.admin.get_supabase_client", return_value=supabase):
@@ -100,6 +113,23 @@ async def test_admin_teams_query_excludes_invite_code_and_scopes_member_query():
     assert member_filter == ("in", "team_id", [team_id])
     select_calls = [call for call in supabase.calls if call[0] == "select"]
     assert all("profiles!" not in call[1] and "invite_code" not in call[1] for call in select_calls)
+    assert ("eq", "role", "user") in supabase.calls
+
+
+@pytest.mark.asyncio
+async def test_admin_team_list_falls_back_when_legacy_schema_lacks_capacity_column():
+    team_id = "team-legacy"
+    team = {"id": team_id, "name": "Legacy Team", "captain_id": None}
+    supabase = FakeSupabase(
+        {"teams": [team], "profiles": [{"id": "u1", "username": "member", "team_id": team_id, "role": "user"}]},
+        fail_legacy_team_column=True,
+    )
+
+    with patch("app.routers.admin.get_supabase_client", return_value=supabase):
+        result = await list_admin_teams(page=1, page_size=25, q=None, admin={"role": "admin"})
+
+    assert result["items"][0]["max_members"] == 4
+    assert result["items"][0]["members"] == [{"id": "u1", "username": "member"}]
 
 
 @pytest.mark.asyncio

@@ -347,7 +347,7 @@ async def list_admin_users(
         query = supabase.table("profiles").select(
             "id, username, display_name, role, is_banned, team_id, last_seen_at, created_at",
             count="exact",
-        ).order("created_at", desc=True)
+        ).eq("role", "user").order("created_at", desc=True)
         if unassigned:
             query = query.is_("team_id", "null")
         if q and q.strip():
@@ -551,8 +551,10 @@ async def list_admin_teams(
     q: Optional[str] = Query(None, max_length=80),
     admin: Dict[str, Any] = Depends(require_admin)
 ):
+    stage = "initialize"
     try:
         supabase = get_supabase_client()
+        stage = "query teams"
         query = supabase.table("teams").select(
             "id, name, captain_id, max_members, created_at",
             count="exact",
@@ -561,16 +563,36 @@ async def list_admin_teams(
             search = re.sub(r"[^a-zA-Z0-9 _-]", "", q).strip()
             if search:
                 query = query.ilike("name", f"%{search}%")
-        res = query.range((page - 1) * page_size, page * page_size - 1).execute()
+        try:
+            res = query.range((page - 1) * page_size, page * page_size - 1).execute()
+        except Exception as query_error:
+            error_text = str(query_error).lower()
+            if "max_members" not in error_text or not any(
+                marker in error_text for marker in ("column", "schema cache", "does not exist", "could not find")
+            ):
+                raise
+            logger.warning("Teams table has no max_members column; using legacy capacity fallback")
+            legacy_query = supabase.table("teams").select(
+                "id, name, captain_id, created_at",
+                count="exact",
+            ).order("created_at", desc=True)
+            if q and q.strip():
+                search = re.sub(r"[^a-zA-Z0-9 _-]", "", q).strip()
+                if search:
+                    legacy_query = legacy_query.ilike("name", f"%{search}%")
+            res = legacy_query.range((page - 1) * page_size, page * page_size - 1).execute()
         teams = res.data or []
+        for team in teams:
+            team.setdefault("max_members", 4)
         team_ids = [str(team["id"]) for team in teams]
 
         members_by_team: Dict[str, List[Dict[str, Any]]] = {}
         profiles_by_id: Dict[str, Dict[str, Any]] = {}
         if team_ids:
+            stage = "query team members"
             profiles_res = supabase.table("profiles").select(
                 "id, username, team_id"
-            ).in_("team_id", team_ids).execute()
+            ).in_("team_id", team_ids).eq("role", "user").execute()
             for profile in profiles_res.data or []:
                 profile_id = str(profile["id"])
                 profiles_by_id[profile_id] = profile
@@ -585,6 +607,7 @@ async def list_admin_teams(
             if team.get("captain_id") and str(team["captain_id"]) not in profiles_by_id
         ]
         if missing_captains:
+            stage = "query team captains"
             captain_res = supabase.table("profiles").select("id, username").in_("id", missing_captains).execute()
             profiles_by_id.update({str(profile["id"]): profile for profile in captain_res.data or []})
 
@@ -594,7 +617,7 @@ async def list_admin_teams(
             team["members"] = members_by_team.get(str(team["id"]), [])
         return {"items": teams, "total": res.count or 0, "page": page, "page_size": page_size}
     except Exception as exc:
-        logger.exception("Failed to list admin teams (page=%s, page_size=%s)", page, page_size)
+        logger.exception("Failed to list admin teams during %s (page=%s, page_size=%s)", stage, page, page_size)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="The team directory could not be loaded. Verify the database schema and backend Supabase connection.",
