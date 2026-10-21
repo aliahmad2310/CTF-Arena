@@ -55,22 +55,23 @@ class FakeSupabase:
 
 
 @pytest.mark.asyncio
-async def test_admin_users_query_uses_explicit_team_relationship_and_returns_array():
-    supabase = FakeSupabase({"profiles": [{"id": "user-1", "teams": {"name": "Blue"}}]})
+async def test_admin_users_query_returns_page_and_resolves_team_names_separately():
+    supabase = FakeSupabase({
+        "profiles": [{"id": "user-1", "team_id": "team-1"}],
+        "teams": [{"id": "team-1", "name": "Blue"}],
+    })
 
     with patch("app.routers.admin.get_supabase_client", return_value=supabase):
         users = await list_admin_users(page=2, page_size=25, q="neo", admin={"role": "admin"})
 
     assert users == {
-        "items": [{"id": "user-1", "teams": {"name": "Blue"}}],
+        "items": [{"id": "user-1", "team_id": "team-1", "teams": {"name": "Blue"}}],
         "total": 1,
         "page": 2,
         "page_size": 25,
     }
-    assert any(
-        call[0] == "select" and "teams!profiles_team_id_fkey(name)" in call[1]
-        for call in supabase.calls
-    )
+    assert all("teams!" not in call[1] for call in supabase.calls if call[0] == "select")
+    assert any(call[:2] == ("table", "teams") for call in supabase.calls)
     assert ("range", 25, 49) in supabase.calls
     assert any(call[0] == "or" for call in supabase.calls)
 
@@ -81,7 +82,7 @@ async def test_admin_teams_query_excludes_invite_code_and_scopes_member_query():
     team = {
         "id": team_id,
         "name": "Blue Team",
-        "profiles": {"username": "captain"},
+        "captain_id": "user-1",
     }
     member = {"id": "user-1", "username": "captain", "team_id": team_id}
     supabase = FakeSupabase({"teams": [team], "profiles": [member]})
@@ -90,11 +91,22 @@ async def test_admin_teams_query_excludes_invite_code_and_scopes_member_query():
         teams = await list_admin_teams(page=1, page_size=25, q="Blue", admin={"role": "admin"})
 
     assert teams["items"][0]["members"] == [{"id": "user-1", "username": "captain"}]
+    assert teams["items"][0]["profiles"] == {"username": "captain"}
     assert "invite_code" not in teams["items"][0]
     assert teams["total"] == 1
     assert ("range", 0, 24) in supabase.calls
     assert any(call[0] == "ilike" for call in supabase.calls)
     member_filter = next(call for call in supabase.calls if call[0] == "in")
     assert member_filter == ("in", "team_id", [team_id])
-    team_select = next(call for call in supabase.calls if call[0] == "select")
-    assert "invite_code" not in team_select[1]
+    select_calls = [call for call in supabase.calls if call[0] == "select"]
+    assert all("profiles!" not in call[1] and "invite_code" not in call[1] for call in select_calls)
+
+
+@pytest.mark.asyncio
+async def test_admin_user_list_returns_actionable_service_error_when_database_fails():
+    with patch("app.routers.admin.get_supabase_client", side_effect=RuntimeError("database unavailable")):
+        with pytest.raises(Exception) as exc_info:
+            await list_admin_users(page=1, page_size=25, admin={"role": "admin"})
+
+    assert getattr(exc_info.value, "status_code", None) == 503
+    assert "user directory could not be loaded" in exc_info.value.detail.lower()

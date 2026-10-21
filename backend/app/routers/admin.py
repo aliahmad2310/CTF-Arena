@@ -1,5 +1,6 @@
 import secrets
 import re
+import logging
 from typing import Dict, Any, List, Optional
 from uuid import UUID
 from datetime import datetime, timezone
@@ -31,6 +32,7 @@ from app.models.admin import (
 )
 
 router = APIRouter(prefix="/admin", tags=["Admin Content Management"])
+logger = logging.getLogger("ctf-arena.admin")
 
 MAX_CHALLENGE_FILE_BYTES = 10 * 1024 * 1024
 ALLOWED_CHALLENGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".txt", ".py", ".md", ".pdf", ".zip"}
@@ -340,19 +342,37 @@ async def list_admin_users(
     unassigned: bool = Query(False),
     admin: Dict[str, Any] = Depends(require_admin)
 ):
-    supabase = get_supabase_client()
-    query = supabase.table("profiles").select(
-        "id, username, display_name, role, is_banned, team_id, last_seen_at, created_at, teams!profiles_team_id_fkey(name)",
-        count="exact",
-    ).order("created_at", desc=True)
-    if unassigned:
-        query = query.is_("team_id", "null")
-    if q and q.strip():
-        search = re.sub(r"[^a-zA-Z0-9 _-]", "", q).strip()
-        if search:
-            query = query.or_(f"username.ilike.%{search}%,display_name.ilike.%{search}%")
-    res = query.range((page - 1) * page_size, page * page_size - 1).execute()
-    return {"items": res.data or [], "total": res.count or 0, "page": page, "page_size": page_size}
+    try:
+        supabase = get_supabase_client()
+        query = supabase.table("profiles").select(
+            "id, username, display_name, role, is_banned, team_id, last_seen_at, created_at",
+            count="exact",
+        ).order("created_at", desc=True)
+        if unassigned:
+            query = query.is_("team_id", "null")
+        if q and q.strip():
+            search = re.sub(r"[^a-zA-Z0-9 _-]", "", q).strip()
+            if search:
+                query = query.or_(f"username.ilike.%{search}%,display_name.ilike.%{search}%")
+        res = query.range((page - 1) * page_size, page * page_size - 1).execute()
+        users = res.data or []
+
+        team_ids = list({str(user["team_id"]) for user in users if user.get("team_id")})
+        team_names = {}
+        if team_ids:
+            teams_res = supabase.table("teams").select("id, name").in_("id", team_ids).execute()
+            team_names = {str(team["id"]): team["name"] for team in (teams_res.data or [])}
+        for user in users:
+            team_id = user.get("team_id")
+            user["teams"] = {"name": team_names.get(str(team_id))} if team_id else None
+
+        return {"items": users, "total": res.count or 0, "page": page, "page_size": page_size}
+    except Exception as exc:
+        logger.exception("Failed to list admin users (page=%s, page_size=%s)", page, page_size)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The user directory could not be loaded. Verify the database schema and backend Supabase connection.",
+        ) from exc
 
 
 @router.post("/users/{id}/ban", response_model=MessageResponse)
@@ -531,29 +551,54 @@ async def list_admin_teams(
     q: Optional[str] = Query(None, max_length=80),
     admin: Dict[str, Any] = Depends(require_admin)
 ):
-    supabase = get_supabase_client()
-    query = supabase.table("teams").select(
-        "id, name, captain_id, max_members, created_at, profiles!fk_teams_captain(username)"
-        , count="exact"
-    ).order("created_at", desc=True)
-    if q and q.strip():
-        search = re.sub(r"[^a-zA-Z0-9 _-]", "", q).strip()
-        if search:
-            query = query.ilike("name", f"%{search}%")
-    res = query.range((page - 1) * page_size, page * page_size - 1).execute()
-    teams = res.data or []
-    team_ids = [str(team["id"]) for team in teams]
-    members_by_team: Dict[str, List[Dict[str, Any]]] = {}
-    if team_ids:
-        profiles_res = supabase.table("profiles").select("id, username, team_id").in_("team_id", team_ids).execute()
-        for profile in profiles_res.data or []:
-            members_by_team.setdefault(str(profile["team_id"]), []).append({
-                "id": profile["id"],
-                "username": profile["username"]
-            })
-    for team in teams:
-        team["members"] = members_by_team.get(str(team["id"]), [])
-    return {"items": teams, "total": res.count or 0, "page": page, "page_size": page_size}
+    try:
+        supabase = get_supabase_client()
+        query = supabase.table("teams").select(
+            "id, name, captain_id, max_members, created_at",
+            count="exact",
+        ).order("created_at", desc=True)
+        if q and q.strip():
+            search = re.sub(r"[^a-zA-Z0-9 _-]", "", q).strip()
+            if search:
+                query = query.ilike("name", f"%{search}%")
+        res = query.range((page - 1) * page_size, page * page_size - 1).execute()
+        teams = res.data or []
+        team_ids = [str(team["id"]) for team in teams]
+
+        members_by_team: Dict[str, List[Dict[str, Any]]] = {}
+        profiles_by_id: Dict[str, Dict[str, Any]] = {}
+        if team_ids:
+            profiles_res = supabase.table("profiles").select(
+                "id, username, team_id"
+            ).in_("team_id", team_ids).execute()
+            for profile in profiles_res.data or []:
+                profile_id = str(profile["id"])
+                profiles_by_id[profile_id] = profile
+                members_by_team.setdefault(str(profile["team_id"]), []).append({
+                    "id": profile["id"],
+                    "username": profile["username"]
+                })
+
+        missing_captains = [
+            str(team["captain_id"])
+            for team in teams
+            if team.get("captain_id") and str(team["captain_id"]) not in profiles_by_id
+        ]
+        if missing_captains:
+            captain_res = supabase.table("profiles").select("id, username").in_("id", missing_captains).execute()
+            profiles_by_id.update({str(profile["id"]): profile for profile in captain_res.data or []})
+
+        for team in teams:
+            captain = profiles_by_id.get(str(team.get("captain_id")))
+            team["profiles"] = {"username": captain["username"]} if captain else None
+            team["members"] = members_by_team.get(str(team["id"]), [])
+        return {"items": teams, "total": res.count or 0, "page": page, "page_size": page_size}
+    except Exception as exc:
+        logger.exception("Failed to list admin teams (page=%s, page_size=%s)", page, page_size)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The team directory could not be loaded. Verify the database schema and backend Supabase connection.",
+        ) from exc
 
 
 @router.post("/teams", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)

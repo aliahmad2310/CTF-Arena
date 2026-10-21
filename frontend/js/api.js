@@ -142,7 +142,9 @@ export async function apiFetch(endpoint, options = {}) {
 
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}));
-    const message = errData.detail || `Request failed with status ${response.status}`;
+    const message = typeof errData.detail === "string"
+      ? errData.detail
+      : errData.detail?.[0]?.msg || `Request failed with status ${response.status}`;
     throw new Error(message);
   }
 
