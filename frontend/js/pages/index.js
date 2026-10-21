@@ -81,8 +81,10 @@ async function initCtfCountdown() {
 
     const statusBadge = document.getElementById("ctf-status-badge");
     const freezeBadge = document.getElementById("freeze-badge");
-    statusBadge.className = "badge badge-grey";
-    statusBadge.textContent = "Schedule not set";
+    if (statusBadge) {
+      statusBadge.className = "badge badge-grey";
+      statusBadge.textContent = "Schedule not set";
+    }
 
     if (status.freeze_leaderboard) {
       freezeBadge.classList.remove("hidden");
@@ -94,16 +96,22 @@ async function initCtfCountdown() {
     const now = new Date();
 
     if (status.start_time && new Date(status.start_time) > now) {
-      statusBadge.className = "badge badge-amber";
-      statusBadge.textContent = "Starting Soon";
+      if (statusBadge) {
+        statusBadge.className = "badge badge-amber";
+        statusBadge.textContent = "Starting Soon";
+      }
       targetDate = new Date(status.start_time);
     } else if (status.end_time && new Date(status.end_time) > now) {
-      statusBadge.className = "badge badge-green";
-      statusBadge.textContent = "Competition Active";
+      if (statusBadge) {
+        statusBadge.className = "badge badge-green";
+        statusBadge.textContent = "Competition Active";
+      }
       targetDate = new Date(status.end_time);
     } else if (status.end_time && new Date(status.end_time) <= now) {
-      statusBadge.className = "badge badge-red";
-      statusBadge.textContent = "Competition Concluded";
+      if (statusBadge) {
+        statusBadge.className = "badge badge-red";
+        statusBadge.textContent = "Competition Concluded";
+      }
     }
 
     if (countdownInterval) clearInterval(countdownInterval);
@@ -152,10 +160,6 @@ function bindChampionshipEditor() {
     document.getElementById("editor-hours").value = Math.floor((totalSeconds % 86400) / 3600);
     document.getElementById("editor-minutes").value = Math.floor((totalSeconds % 3600) / 60);
     document.getElementById("editor-seconds").value = totalSeconds % 60;
-    const refreshInput = document.getElementById("editor-refresh");
-    if (refreshInput) {
-      refreshInput.value = config.leaderboard_refresh_seconds || 15;
-    }
     backdrop.classList.remove("hidden");
     document.getElementById("editor-title").focus();
   };
@@ -174,15 +178,9 @@ function bindChampionshipEditor() {
     const hours = Number(document.getElementById("editor-hours").value);
     const minutes = Number(document.getElementById("editor-minutes").value);
     const seconds = Number(document.getElementById("editor-seconds").value);
-    const refreshInput = document.getElementById("editor-refresh");
-    const refreshSeconds = refreshInput ? Number(refreshInput.value) : 15;
 
     if (!newTitle || !Number.isInteger(days) || days < 0 || !Number.isInteger(hours) || hours < 0 || hours > 23 || !Number.isInteger(minutes) || minutes < 0 || minutes > 59 || !Number.isInteger(seconds) || seconds < 0 || seconds > 59) {
       showToast("Enter a championship title and valid countdown values.", "error");
-      return;
-    }
-    if (!Number.isInteger(refreshSeconds) || refreshSeconds < 1 || refreshSeconds > 3600) {
-      showToast("Scoreboard refresh interval must be between 1 and 3600 seconds.", "error");
       return;
     }
     try {
@@ -190,8 +188,7 @@ function bindChampionshipEditor() {
       const targetKey = config.end_time ? "end_time" : "start_time";
       const changes = {
         title: newTitle,
-        [targetKey]: targetDate.toISOString(),
-        leaderboard_refresh_seconds: refreshSeconds
+        [targetKey]: targetDate.toISOString()
       };
       if (targetKey === "start_time" && config.end_time && new Date(config.end_time) <= targetDate) {
         showToast("Championship end must be later than the start.", "error");
@@ -204,7 +201,6 @@ function bindChampionshipEditor() {
       await api.patch("/admin/settings", changes);
       config.title = newTitle;
       config[targetKey] = targetDate.toISOString();
-      config.leaderboard_refresh_seconds = refreshSeconds;
       backdrop.classList.add("hidden");
       showToast("Championship updated", "success");
       await initCtfCountdown();

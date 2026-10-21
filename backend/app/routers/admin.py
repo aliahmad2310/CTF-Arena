@@ -266,18 +266,30 @@ async def upload_room_attachment(
         await file.close()
 
     supabase = get_supabase_client()
-    storage_path = f"labs/{uuid.uuid4().hex}{extension}"
+    from pathlib import Path
+    storage_dir = Path(__file__).resolve().parent.parent.parent / "storage" / "labs"
+    storage_dir.mkdir(parents=True, exist_ok=True)
+
+    unique_id = uuid.uuid4().hex
+    safe_disk_filename = f"{unique_id}_{filename}"
+    disk_path = storage_dir / safe_disk_filename
+    with open(disk_path, "wb") as f:
+        f.write(content)
+
+    storage_path = f"labs/{unique_id}{extension}"
     safe_content_type = "application/octet-stream" if extension in {".zip", ".txt", ".pdf"} else file.content_type
+    file_url = f"/storage/labs/{safe_disk_filename}"
     try:
         supabase.storage.from_("challenge-files").upload(
             storage_path,
             content,
             {"content-type": safe_content_type, "cache-control": "3600", "upsert": "false"},
         )
-        file_url = supabase.storage.from_("challenge-files").get_public_url(storage_path)
+        remote_url = supabase.storage.from_("challenge-files").get_public_url(storage_path)
+        if remote_url:
+            file_url = remote_url
     except Exception as exc:
-        logger.warning("Supabase storage upload failed: %s", exc)
-        file_url = f"/assets/labs/{storage_path}"
+        logger.warning("Supabase storage upload skipped or failed, using local backend storage: %s", exc)
 
     return {"file_url": file_url, "file_name": filename, "file_path": storage_path}
 

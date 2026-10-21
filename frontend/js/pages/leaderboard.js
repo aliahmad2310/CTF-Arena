@@ -5,6 +5,7 @@ import { api } from "../api.js";
 import { initLayout } from "../layout.js";
 import { getUserProfile, requireAdmin } from "../auth.js";
 import { escapeHtml, debounce } from "../utils.js";
+import { showToast } from "../ui.js";
 
 let activeTab = "teams";
 let currentProfile = null;
@@ -57,12 +58,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (isAdmin) {
     const subtitle = document.getElementById("leaderboard-subtitle");
     if (subtitle) subtitle.textContent = "Admin view: click a user or team to inspect lab progress and activity.";
+    initAdminRefreshControl();
   }
 
   try {
     const status = await api.get("/ctf/status");
     if (status && typeof status.leaderboard_refresh_seconds === "number" && status.leaderboard_refresh_seconds >= 1) {
       refreshInterval = status.leaderboard_refresh_seconds;
+      const input = document.getElementById("admin-refresh-input");
+      if (input) input.value = refreshInterval;
     }
   } catch (err) {
     console.warn("Could not query CTF status for scoreboard refresh interval:", err);
@@ -71,6 +75,38 @@ document.addEventListener("DOMContentLoaded", async () => {
   await refreshLeaderboard();
   startCountdown();
 });
+
+function initAdminRefreshControl() {
+  const box = document.getElementById("admin-refresh-box");
+  const input = document.getElementById("admin-refresh-input");
+  const saveBtn = document.getElementById("admin-refresh-save-btn");
+  if (!box || !input || !saveBtn) return;
+
+  box.style.display = "inline-flex";
+  input.value = refreshInterval;
+
+  saveBtn.onclick = async () => {
+    const newSec = parseInt(input.value, 10);
+    if (isNaN(newSec) || newSec < 1 || newSec > 3600) {
+      showToast("Refresh interval must be between 1 and 3600 seconds", "error");
+      return;
+    }
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+    try {
+      await api.patch("/admin/settings", { leaderboard_refresh_seconds: newSec });
+      refreshInterval = newSec;
+      remainingSeconds = newSec;
+      updateCountdownDisplay();
+      showToast(`Scoreboard auto-refresh interval updated to ${newSec}s`, "success");
+    } catch (err) {
+      showToast(err.message || "Failed to update interval", "error");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Set Sec";
+    }
+  };
+}
 
 window.addEventListener("beforeunload", () => {
   if (countdownTimer) clearInterval(countdownTimer);

@@ -44,7 +44,6 @@
       <div class="card-body championship-banner" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-6); padding: var(--space-6);">
         <div class="championship-heading-wrap">
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
-            <span id="ctf-status-badge" class="badge badge-green">Competition Active</span>
             <span id="freeze-badge" class="badge badge-grey hidden">Scoreboard Frozen</span>
           </div>
           <h2 id="ctf-title" class="championship-title" style="font-size: var(--text-xl); margin: 0;">CTF Arena Cyber Championship</h2>
@@ -82,14 +81,13 @@
         <div class="form-group"><label class="form-label" for="editor-hours">Hours</label><input id="editor-hours" class="form-input form-input-mono" type="number" min="0" max="23" required></div>
         <div class="form-group"><label class="form-label" for="editor-minutes">Minutes</label><input id="editor-minutes" class="form-input form-input-mono" type="number" min="0" max="59" required></div>
         <div class="form-group"><label class="form-label" for="editor-seconds">Seconds</label><input id="editor-seconds" class="form-input form-input-mono" type="number" min="0" max="59" required></div>
-        <div class="form-group"><label class="form-label" for="editor-refresh">Scoreboard update interval (seconds)</label><input id="editor-refresh" class="form-input form-input-mono" type="number" min="1" max="3600" value="15" required></div>
         <div style="display:flex;gap:var(--space-2);justify-content:flex-end;"><button id="cancel-countdown-edit" type="button" class="btn btn-secondary">Cancel</button><button id="save-countdown-edit" type="submit" class="btn btn-primary">Save</button></div>
       </div>
     </form></div>
 
     <!-- Top 5 Scoreboard Preview -->
     <section class="card" style="margin-bottom: var(--space-12);">
-      <div class="card-header">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
         <h2 style="font-size: var(--text-base); margin: 0;">Top Squads Leaderboard Preview</h2>
         <a href="/leaderboard.html" class="text-cyan text-xs text-mono" style="font-weight: 600;">View Full Scoreboard &rarr;</a>
       </div>

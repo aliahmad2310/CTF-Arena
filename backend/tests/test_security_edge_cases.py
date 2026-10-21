@@ -45,7 +45,7 @@ def test_jwt_verification_and_claims():
     assert "expired" in exc_info.value.detail.lower()
 
     # Invalid secret / forgery rejection
-    forged_token = jwt.encode(valid_payload, "wrong_secret_key", algorithm="HS256")
+    forged_token = jwt.encode(valid_payload, "wrong_secret_key_at_least_32_bytes_long_here", algorithm="HS256")
     with pytest.raises(HTTPException) as exc_info:
         verify_supabase_jwt(forged_token)
     assert exc_info.value.status_code == 401

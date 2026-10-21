@@ -1,9 +1,4 @@
-/**
- * CTF Arena - Lab Room Page Controller
- * File: frontend/js/pages/lab.js
- * Strictly zero emoji.
- */
-
+import { CONFIG } from "../config.js";
 import { api } from "../api.js";
 import { initLayout } from "../layout.js";
 import { startHeartbeat } from "../auth.js";
@@ -58,19 +53,6 @@ function renderLabHeader(lab) {
 
   document.getElementById("lab-status-badge").innerHTML = renderStatusBadge(lab.user_status);
 
-  // Progress Bar
-  const isCompleted = lab.user_status === "completed";
-  const percent = isCompleted
-    ? 100
-    : lab.challenge_count > 0
-    ? Math.round((lab.user_solved_count / lab.challenge_count) * 100)
-    : 0;
-
-  document.getElementById("progress-text").textContent = isCompleted
-    ? "SOLVED (100%)"
-    : `${lab.user_solved_count} / ${Math.max(1, lab.challenge_count)} SOLVED (${percent}%)`;
-  document.getElementById("progress-bar-fill").style.width = `${percent}%`;
-
   // Tags
   const tagsContainer = document.getElementById("lab-tags");
   if (lab.tags && lab.tags.length > 0) {
@@ -96,7 +78,10 @@ function renderLabMaterial(lab) {
       filenameEl.textContent = "Lab Target Material";
     }
 
-    downloadBtn.href = lab.cover_image_url;
+    const downloadUrl = lab.cover_image_url.startsWith("http")
+      ? lab.cover_image_url
+      : `${CONFIG.API_BASE_URL}${lab.cover_image_url.startsWith("/") ? "" : "/"}${lab.cover_image_url}`;
+    downloadBtn.href = downloadUrl;
     downloadBtn.setAttribute("download", "");
   } else {
     section.style.display = "none";
@@ -145,8 +130,6 @@ function bindFlagSubmission(slug, lab) {
         indicator.textContent = "Captured";
 
         document.getElementById("lab-status-badge").innerHTML = renderStatusBadge("completed");
-        document.getElementById("progress-text").textContent = "SOLVED (100%)";
-        document.getElementById("progress-bar-fill").style.width = "100%";
 
         flagInput.disabled = true;
         submitBtn.disabled = true;

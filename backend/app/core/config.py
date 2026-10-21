@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     # publishable key as the fallback so username login works on hosts where the
     # environment variable cannot be added; an environment value still overrides it.
     SUPABASE_ANON_KEY: str = "sb_publishable_S4i-1fZoF50BuS2kZre4RA_p_a2Zx0L"
-    SUPABASE_JWT_SECRET: str = "placeholder-jwt-secret"
+    SUPABASE_JWT_SECRET: str = "placeholder-jwt-secret-at-least-32-bytes-long-for-hmac"
 
     # CORS and Network
     ALLOWED_ORIGINS: Union[str, List[str]] = [

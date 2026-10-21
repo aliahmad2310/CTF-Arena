@@ -66,6 +66,30 @@ async def get_health():
     )
 
 
+from pathlib import Path
+from fastapi import HTTPException
+from fastapi.responses import FileResponse
+
+STORAGE_DIR = Path(__file__).resolve().parent.parent / "storage" / "labs"
+STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+@app.get("/storage/labs/{filename}", tags=["System"])
+async def get_lab_storage_file(filename: str):
+    """
+    Serves stored lab attachment files directly from the backend file storage.
+    """
+    safe_filename = Path(filename).name
+    file_path = STORAGE_DIR / safe_filename
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Requested lab artifact not found in storage"
+        )
+    return FileResponse(file_path, filename=safe_filename)
+
+
+
 @app.get("/ctf/status", response_model=CtfStatusResponse, tags=["Game State"])
 async def get_ctf_status():
     """
