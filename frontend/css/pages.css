@@ -26,6 +26,54 @@ html.admin-route-pending body {
   padding: var(--space-6);
 }
 
+.championship-heading-wrap {
+  position: relative;
+  padding-right: 2.5rem;
+}
+
+.championship-edit-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line-normal);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--cyan-400);
+  cursor: pointer;
+}
+
+.championship-edit-button:hover {
+  border-color: var(--cyan-400);
+  box-shadow: var(--glow-sm);
+}
+
+.countdown-editor-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(2, 7, 18, 0.78);
+}
+
+.countdown-editor-backdrop.hidden {
+  display: none !important;
+}
+
+.countdown-editor-dialog {
+  width: min(100%, 520px);
+  max-height: min(90vh, 760px);
+  overflow-y: auto;
+}
+
 .championship-title,
 .championship-countdown-block {
   cursor: default;

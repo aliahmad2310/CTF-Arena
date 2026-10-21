@@ -30,7 +30,9 @@ class Settings(BaseSettings):
         "http://127.0.0.1:8000",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "https://ctf-arena-frontend.vercel.app",
+        "https://ctf-arena-frontend-git-main.vercel.app",
     ]
 
     # Security & Game Engine Rules
@@ -38,6 +40,16 @@ class Settings(BaseSettings):
     ACTIVE_WINDOW_MINUTES: int = 5
     STUCK_THRESHOLD_MINUTES: int = 20
     ENV: str = "development"
+
+    @field_validator("ALLOWED_ORIGINS", mode="after")
+    @classmethod
+    def ensure_frontend_origins(cls, origins: List[str]) -> List[str]:
+        """Always permit the deployed frontend domains used by this repository."""
+        required = {
+            "https://ctf-arena-frontend.vercel.app",
+            "https://ctf-arena-frontend-git-main.vercel.app",
+        }
+        return list(dict.fromkeys([*origins, *required]))
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod

@@ -129,8 +129,8 @@
 }
 
 .navbar-user-control {
-  height: 44px;
-  min-height: 44px;
+  height: 36px;
+  min-height: 36px;
   box-sizing: border-box;
   text-transform: none;
   letter-spacing: normal;
@@ -144,8 +144,8 @@
 }
 
 .navbar-login-button {
-  height: 44px;
-  min-height: 44px;
+  height: 36px;
+  min-height: 36px;
   box-sizing: border-box;
   padding: 0 1rem;
   font-family: var(--font-mono);
@@ -156,7 +156,7 @@
 }
 
 .navbar-actions .navbar-signout-button {
-  width: 44px;
+  width: 36px;
   padding: 0;
 }
 

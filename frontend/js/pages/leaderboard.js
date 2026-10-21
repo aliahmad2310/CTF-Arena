@@ -1,414 +1,152 @@
 /**
- * CTF Arena - Leaderboard Controller
- * File: frontend/js/pages/leaderboard.js
- * Strictly zero emoji.
+ * CTF Arena leaderboard controller.
  */
-
 import { api } from "../api.js";
 import { initLayout } from "../layout.js";
 import { getUserProfile, requireAdmin } from "../auth.js";
 import { escapeHtml, debounce } from "../utils.js";
 
-let activeTab = "teams"; // 'teams' | 'users'
-let chartInstance = null;
-let pollTimer = null;
+let activeTab = "teams";
 let currentProfile = null;
 let isAdmin = false;
-let refreshIntervalSeconds = 15;
-const teamColors = new Map();
-const timelineColors = [
-  "#00ff66", "#00f0ff", "#fbbf24", "#f87171", "#a78bfa",
-  "#38bdf8", "#34d399", "#f472b6", "#e879f9", "#818cf8"
-];
+let pollTimer = null;
+const PAGE_SIZE = 100;
 
 document.addEventListener("DOMContentLoaded", async () => {
   currentProfile = await getUserProfile();
   isAdmin = currentProfile?.role === "admin";
   await initLayout();
-
   if (isAdmin) {
     try {
       await requireAdmin();
-      document.getElementById("timeline-chart")?.closest(".card")?.classList.add("hidden");
       document.getElementById("leaderboard-search").placeholder = "Search team or user...";
     } catch {
       isAdmin = false;
     }
   }
-
-  initTabs();
-  initSearch();
-  updateTableHeader();
-
-  // Retrieve competition settings for dynamic leaderboard refresh rate
-  try {
-    const statusData = await api.get("/ctf/status");
-    if (statusData && typeof statusData.leaderboard_refresh_seconds === "number") {
-      refreshIntervalSeconds = statusData.leaderboard_refresh_seconds;
-    }
-  } catch {
-    refreshIntervalSeconds = 15;
+  bindTabs();
+  bindSearch();
+  updateHeader();
+  if (isAdmin) {
+    const subtitle = document.getElementById("leaderboard-subtitle");
+    if (subtitle) subtitle.textContent = "Admin view: click a user or team to inspect lab progress and activity.";
   }
-
-  const subtitleEl = document.getElementById("leaderboard-subtitle");
-  if (subtitleEl) {
-    if (refreshIntervalSeconds === 0) {
-      subtitleEl.textContent = "Live rankings auto-refresh is paused by administrator. Manual refresh available.";
-    } else if (!isAdmin) {
-      subtitleEl.textContent = `Live rankings update automatically every ${refreshIntervalSeconds} seconds. Earliest timestamp breaks score ties.`;
-    }
-    if (isAdmin) subtitleEl.textContent = "Admin view: click a user or team to inspect lab progress and current activity.";
-  }
-
-  await refreshAll();
-
-  // Dynamic Polling loop for live refresh
-  if (refreshIntervalSeconds > 0) {
-    pollTimer = setInterval(async () => {
-      if (!document.hidden) {
-        await refreshAll(true);
-      }
-    }, refreshIntervalSeconds * 1000);
-  }
+  await refreshLeaderboard();
+  pollTimer = setInterval(() => {
+    if (!document.hidden) void refreshLeaderboard(true);
+  }, 15000);
 });
 
 window.addEventListener("beforeunload", () => {
   if (pollTimer) clearInterval(pollTimer);
 });
 
-async function refreshAll(isBackground = false) {
-  if (activeTab === "teams") {
-    await fetchTeamsLeaderboard(isBackground);
-  } else {
-    await fetchUsersLeaderboard(isBackground);
-  }
-
-  if (!isBackground || !chartInstance) {
-    if (!isAdmin) await fetchAndRenderTimeline();
-  }
-}
-
-function initTabs() {
-  const tabTeams = document.getElementById("tab-teams");
-  const tabUsers = document.getElementById("tab-users");
-
-  tabTeams.onclick = async () => {
+function bindTabs() {
+  document.getElementById("tab-teams").addEventListener("click", async () => {
     if (activeTab === "teams") return;
     activeTab = "teams";
-
-    tabTeams.style.background = "var(--bg-card)";
-    tabTeams.style.color = "var(--accent-green)";
-    tabTeams.style.borderBottomColor = "var(--accent-green)";
-
-    tabUsers.style.background = "var(--bg-surface)";
-    tabUsers.style.color = "var(--text-muted)";
-    tabUsers.style.borderBottomColor = "transparent";
-
-    updateTableHeader();
-    await fetchTeamsLeaderboard();
-  };
-
-  tabUsers.onclick = async () => {
+    setActiveTab("tab-teams", "tab-users");
+    updateHeader();
+    await refreshLeaderboard();
+  });
+  document.getElementById("tab-users").addEventListener("click", async () => {
     if (activeTab === "users") return;
     activeTab = "users";
-
-    tabUsers.style.background = "var(--bg-card)";
-    tabUsers.style.color = "var(--accent-green)";
-    tabUsers.style.borderBottomColor = "var(--accent-green)";
-
-    tabTeams.style.background = "var(--bg-surface)";
-    tabTeams.style.color = "var(--text-muted)";
-    tabTeams.style.borderBottomColor = "transparent";
-
-    updateTableHeader();
-    await fetchUsersLeaderboard();
-  };
+    setActiveTab("tab-users", "tab-teams");
+    updateHeader();
+    await refreshLeaderboard();
+  });
 }
 
-function updateTableHeader() {
-  const thead = document.getElementById("leaderboard-thead");
-  if (isAdmin && activeTab === "teams") {
-    thead.innerHTML = `
-      <tr>
-        <th style="width: 80px;">Rank</th>
-        <th>Team</th>
-        <th>Members</th>
-        <th>Current Labs</th>
-        <th>Completed Labs</th>
-        <th>Score</th>
-      </tr>
-    `;
-    return;
-  }
-  if (activeTab === "teams") {
-    thead.innerHTML = `
-      <tr>
-        <th style="width: 80px;">Rank</th>
-        <th>Team</th>
-        <th>Members</th>
-        <th>Solves</th>
-        <th>Score</th>
-      </tr>
-    `;
+function setActiveTab(activeId, inactiveId) {
+  const active = document.getElementById(activeId);
+  const inactive = document.getElementById(inactiveId);
+  active.style.background = "var(--bg-card)";
+  active.style.color = "var(--accent-green)";
+  active.style.borderBottomColor = "var(--accent-green)";
+  inactive.style.background = "var(--bg-surface)";
+  inactive.style.color = "var(--text-muted)";
+  inactive.style.borderBottomColor = "transparent";
+}
+
+function bindSearch() {
+  const input = document.getElementById("leaderboard-search");
+  input.addEventListener("input", debounce(() => refreshLeaderboard(), 300));
+}
+
+function updateHeader() {
+  const head = document.getElementById("leaderboard-thead");
+  if (activeTab === "teams" && isAdmin) {
+    head.innerHTML = "<tr><th>Rank</th><th>Team</th><th>Members</th><th>Current Labs</th><th>Completed Labs</th><th>Score</th></tr>";
+  } else if (activeTab === "teams") {
+    head.innerHTML = "<tr><th>Rank</th><th>Team</th><th>Members</th><th>Solves</th><th>Score</th></tr>";
   } else {
-    thead.innerHTML = `
-      <tr>
-        <th style="width: 80px;">Rank</th>
-        <th>Name</th>
-        ${isAdmin ? "<th>Team</th>" : ""}
-        <th>Solves</th>
-        <th>Score</th>
-      </tr>
-    `;
+    head.innerHTML = `<tr><th>Rank</th><th>Name</th>${isAdmin ? "<th>Team</th>" : ""}<th>Solves</th><th>Score</th></tr>`;
   }
 }
 
-function initSearch() {
-  const searchInput = document.getElementById("leaderboard-search");
-  searchInput.addEventListener("input", debounce(async () => {
-    const q = searchInput.value.trim();
+async function refreshLeaderboard(background = false) {
+  const body = document.getElementById("leaderboard-tbody");
+  const columns = activeTab === "teams" ? (isAdmin ? 6 : 5) : (isAdmin ? 5 : 4);
+  if (!background) body.innerHTML = `<tr><td colspan="${columns}" style="text-align:center;padding:var(--space-6);">Loading standings...</td></tr>`;
+  const query = document.getElementById("leaderboard-search").value.trim();
+  try {
     if (activeTab === "teams") {
-      await fetchTeamsLeaderboard(false, q);
+      const response = await api.get("/leaderboard/teams", { page: 1, page_size: PAGE_SIZE, q: query });
+      if (isAdmin) {
+        const details = await api.get("/admin/monitor/teams", { page: 1, page_size: PAGE_SIZE });
+        renderAdminTeams(response.entries || [], details.teams || []);
+      } else {
+        renderTeams(response.entries || []);
+      }
     } else {
-      await fetchUsersLeaderboard(false, q);
+      const response = await api.get("/leaderboard/users", { page: 1, page_size: PAGE_SIZE, q: query });
+      renderUsers(response.entries || []);
     }
-  }, 300));
-}
-
-async function fetchTeamsLeaderboard(isBackground = false, query = "") {
-  const tbody = document.getElementById("leaderboard-tbody");
-  if (!isBackground) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: var(--space-8);">Refreshing standings...</td></tr>`;
-  }
-
-  try {
-    const data = await api.get("/leaderboard/teams", { q: query });
-    if (isAdmin) {
-      const progressData = await api.get("/admin/monitor/teams", { page: 1, page_size: 100 });
-      renderAdminTeamsTable(data.entries, progressData.teams || []);
-    } else {
-      renderTeamsTable(data.entries);
-    }
-  } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="${isAdmin ? 6 : 5}" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
+  } catch (error) {
+    body.innerHTML = `<tr><td colspan="${columns}" style="text-align:center;color:var(--status-red-text);padding:var(--space-6);">${escapeHtml(error.message || "Unable to load leaderboard")}</td></tr>`;
   }
 }
 
-function renderTeamsTable(entries) {
-  const tbody = document.getElementById("leaderboard-tbody");
-
-  if (!entries || entries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: var(--space-8);">No teams found on the scoreboard.</td></tr>`;
+function renderTeams(teams) {
+  const body = document.getElementById("leaderboard-tbody");
+  if (!teams.length) {
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:var(--space-6);">No teams found on the scoreboard.</td></tr>';
     return;
   }
-
-  let html = "";
-  const myTeamId = currentProfile ? currentProfile.team_id : null;
-
-  entries.forEach((team) => {
-    const isMyTeam = (String(team.team_id) === String(myTeamId));
+  const myTeamId = currentProfile?.team_id;
+  body.innerHTML = teams.map((team) => {
+    const mine = String(team.team_id) === String(myTeamId);
     const rankClass = team.rank === 1 ? "text-green font-bold" : team.rank <= 3 ? "text-cyan font-bold" : "text-mono";
-
-    html += `
-      <tr style="${isMyTeam ? "background-color: rgba(0, 255, 102, 0.05); border-left: 3px solid var(--accent-green);" : ""}">
-        <td class="${rankClass}">#${team.rank}</td>
-        <td>
-          <a href="/team-profile.html?id=${encodeURIComponent(team.team_id)}" class="text-bold">
-            ${escapeHtml(team.team_name)}
-          </a>
-          ${isMyTeam ? `<span class="badge badge-green" style="margin-left: 0.5rem; font-size: 0.65rem;">Your Team</span>` : ""}
-        </td>
-        <td class="text-dim text-xs">${team.member_count} Operatives</td>
-        <td class="text-mono">${team.solves_count}</td>
-        <td class="text-green text-mono font-bold">${team.score.toLocaleString()}</td>
-      </tr>
-    `;
-  });
-
-  tbody.innerHTML = html;
-}
-
-async function fetchUsersLeaderboard(isBackground = false, query = "") {
-  const tbody = document.getElementById("leaderboard-tbody");
-  if (!isBackground) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-dim); padding: var(--space-8);">Refreshing standings...</td></tr>`;
-  }
-
-  try {
-    const data = await api.get("/leaderboard/users", { q: query });
-    renderUsersTable(data.entries);
-  } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
-  }
-}
-
-function renderUsersTable(entries) {
-  const tbody = document.getElementById("leaderboard-tbody");
-  if (isAdmin) {
-    document.getElementById("leaderboard-thead").innerHTML = `
-      <tr><th style="width:80px;">Rank</th><th>User</th><th>Team</th><th>Solves</th><th>Score</th></tr>
-    `;
-  }
-
-  if (!entries || entries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align: center; color: var(--text-dim); padding: var(--space-8);">No competitors ranked yet.</td></tr>`;
-    return;
-  }
-
-  let html = "";
-  const myUserId = currentProfile ? currentProfile.id : null;
-
-  entries.forEach((user) => {
-    const isMe = (String(user.user_id) === String(myUserId));
-    const rankClass = user.rank === 1 ? "text-green font-bold" : user.rank <= 3 ? "text-cyan font-bold" : "text-mono";
-
-    html += `
-      <tr style="${isMe ? "background-color: rgba(0, 255, 102, 0.05); border-left: 3px solid var(--accent-green);" : ""}">
-        <td class="${rankClass}">#${user.rank}</td>
-        <td>
-          <a href="${isAdmin ? `/admin/user.html?id=${encodeURIComponent(user.user_id)}` : `/profile.html?username=${encodeURIComponent(user.username)}`}" class="text-bold">
-            ${escapeHtml(user.username)}
-          </a>
-          <span class="text-dim text-xs" style="margin-left: 0.35rem;">(${escapeHtml(user.display_name)})</span>
-          ${isMe ? `<span class="badge badge-green" style="margin-left: 0.5rem; font-size: 0.65rem;">You</span>` : ""}
-        </td>
-        ${isAdmin ? `<td>${escapeHtml(user.team_name || "Solo")}</td>` : ""}
-        <td class="text-mono">${user.solves_count}</td>
-        <td class="text-green text-mono font-bold">${user.score.toLocaleString()}</td>
-      </tr>
-    `;
-  });
-
-  tbody.innerHTML = html;
-}
-
-function renderAdminTeamsTable(entries, progressTeams) {
-  const tbody = document.getElementById("leaderboard-tbody");
-  document.getElementById("leaderboard-thead").innerHTML = `
-    <tr><th>Rank</th><th>Team</th><th>Members</th><th>Current Labs</th><th>Completed Labs</th><th>Score</th></tr>
-  `;
-  if (!entries?.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:var(--space-6);">No teams on the scoreboard.</td></tr>';
-    return;
-  }
-  const progressLookup = new Map(progressTeams.map((team) => [String(team.team_id), team]));
-  tbody.innerHTML = entries.map((team) => {
-    const details = progressLookup.get(String(team.team_id)) || {};
-    const current = details.current_labs?.length ? details.current_labs.map(escapeHtml).join(", ") : "None";
-    const done = details.completed_labs?.length ? details.completed_labs.map(escapeHtml).join(", ") : "None";
-    return `<tr>
-      <td>#${team.rank}</td>
-      <td><a class="text-bold" href="/admin/team.html?id=${encodeURIComponent(team.team_id)}">${escapeHtml(team.team_name)}</a></td>
-      <td>${team.member_count} / ${details.max_members || 4} (${details.members_online || 0} online)</td>
-      <td>${current}</td><td>${done}</td><td class="text-green text-mono font-bold">${team.score.toLocaleString()}</td>
-    </tr>`;
+    return `<tr><td class="${rankClass}">#${team.rank}</td><td><a href="/team-profile.html?id=${encodeURIComponent(team.team_id)}" class="text-bold">${escapeHtml(team.team_name)}</a>${mine ? '<span class="badge badge-green">Your Team</span>' : ""}</td><td>${team.member_count} Operatives</td><td>${team.solves_count}</td><td class="text-green text-mono font-bold">${Number(team.score || 0).toLocaleString()}</td></tr>`;
   }).join("");
 }
 
-async function fetchAndRenderTimeline() {
-  const canvas = document.getElementById("timeline-chart");
-  if (!canvas || !window.Chart) return;
-
-  try {
-    const data = await api.get("/leaderboard/timeline");
-    const emptyEl = document.getElementById("timeline-empty");
-
-    const seriesWithPoints = (data.series || []).filter((series) => series.points && series.points.length > 0);
-    if (seriesWithPoints.length === 0) {
-      if (emptyEl) emptyEl.style.display = "flex";
-      canvas.style.display = "none";
-      return;
-    }
-
-    if (emptyEl) emptyEl.style.display = "none";
-    canvas.style.display = "block";
-
-    const visibleColors = new Set();
-    const datasets = seriesWithPoints.map((s) => {
-      let color = teamColors.get(s.id);
-      if (!color || visibleColors.has(color)) {
-        color = timelineColors.find((candidate) => !visibleColors.has(candidate))
-          || timelineColors[visibleColors.size % timelineColors.length];
-        teamColors.set(s.id, color);
-      }
-      visibleColors.add(color);
-      const points = s.points.map(p => ({
-        x: new Date(p.timestamp).getTime(),
-        y: p.score
-      })).sort((a, b) => a.x - b.x);
-
-      return {
-        label: s.name,
-        data: points,
-        borderColor: color,
-        backgroundColor: color,
-        borderWidth: 2,
-        tension: 0.2,
-        pointRadius: 3,
-        pointHoverRadius: 6
-      };
-    });
-
-    if (chartInstance) {
-      chartInstance.data.datasets = datasets;
-      chartInstance.update();
-      return;
-    }
-
-    const ctx = canvas.getContext("2d");
-    chartInstance = new window.Chart(ctx, {
-      type: "line",
-      data: { datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          mode: "index",
-          intersect: false
-        },
-        plugins: {
-          legend: {
-            position: "bottom",
-            labels: {
-              color: "#94a3b8",
-              font: { family: "monospace", size: 11 },
-              boxWidth: 12
-            }
-          },
-          tooltip: {
-            backgroundColor: "#0d111a",
-            titleColor: "#ffffff",
-            bodyColor: "#e2e8f0",
-            borderColor: "#334155",
-            borderWidth: 1
-          }
-        },
-        scales: {
-          x: {
-            type: "linear",
-            grid: { color: "#1e293b" },
-            ticks: {
-              color: "#64748b",
-              font: { family: "monospace", size: 10 },
-              callback: (value) => new Date(Number(value)).toLocaleString([], {
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit"
-              })
-            },
-            title: { display: true, text: "Solve time", color: "#94a3b8" }
-          },
-          y: {
-            grid: { color: "#1e293b" },
-            ticks: { color: "#64748b", font: { family: "monospace", size: 10 } },
-            title: { display: true, text: "Cumulative points", color: "#94a3b8" },
-            beginAtZero: true
-          }
-        }
-      }
-    });
-  } catch (err) {
-    console.warn("Could not render timeline chart:", err);
+function renderAdminTeams(teams, progressTeams) {
+  const body = document.getElementById("leaderboard-tbody");
+  if (!teams.length) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:var(--space-6);">No teams found on the scoreboard.</td></tr>';
+    return;
   }
+  const progressByTeam = new Map(progressTeams.map((team) => [String(team.team_id), team]));
+  body.innerHTML = teams.map((team) => {
+    const progress = progressByTeam.get(String(team.team_id)) || {};
+    const currentLabs = (progress.current_labs || []).map(escapeHtml).join(", ") || "None";
+    const completedLabs = (progress.completed_labs || []).map(escapeHtml).join(", ") || "None";
+    return `<tr><td>#${team.rank}</td><td><a class="text-bold" href="/admin/team.html?id=${encodeURIComponent(team.team_id)}">${escapeHtml(team.team_name)}</a></td><td>${team.member_count || progress.member_count || 0} / ${progress.max_members || 4} (${progress.members_online || 0} online)</td><td>${currentLabs}</td><td>${completedLabs}</td><td class="text-green text-mono font-bold">${Number(team.score || 0).toLocaleString()}</td></tr>`;
+  }).join("");
+}
+
+function renderUsers(users) {
+  const body = document.getElementById("leaderboard-tbody");
+  const columns = isAdmin ? 5 : 4;
+  if (!users.length) {
+    body.innerHTML = `<tr><td colspan="${columns}" style="text-align:center;padding:var(--space-6);">No competitors ranked yet.</td></tr>`;
+    return;
+  }
+  body.innerHTML = users.map((user) => {
+    const nameUrl = isAdmin ? `/admin/user.html?id=${encodeURIComponent(user.user_id)}` : `/profile.html?username=${encodeURIComponent(user.username)}`;
+    const userCell = `<a href="${nameUrl}" class="text-bold">${escapeHtml(user.username)}</a><span class="text-dim text-xs"> (${escapeHtml(user.display_name)})</span>`;
+    return `<tr><td>#${user.rank}</td><td>${userCell}</td>${isAdmin ? `<td>${escapeHtml(user.team_name || "Solo")}</td>` : ""}<td>${user.solves_count}</td><td class="text-green text-mono font-bold">${Number(user.score || 0).toLocaleString()}</td></tr>`;
+  }).join("");
 }

@@ -83,7 +83,10 @@ async def get_team_leaderboard(
     offset = (page - 1) * page_size
 
     try:
-        query = supabase.table("team_leaderboard").select("*", count="exact")
+        query = supabase.table("team_leaderboard").select(
+            "rank, team_id, team_name, score, solves_count, member_count, last_solve_at",
+            count="exact",
+        )
 
         if q:
             clean_q = q.strip()

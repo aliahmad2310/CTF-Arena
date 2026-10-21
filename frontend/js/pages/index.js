@@ -12,6 +12,7 @@ import { escapeHtml } from "../utils.js";
 import { requireAdmin } from "../auth.js";
 import { showToast } from "../ui.js";
 import { supabase } from "../supabaseClient.js";
+import { Icons } from "../icons.js";
 
 let countdownInterval = null;
 let isAdminRoute = false;
@@ -161,10 +162,10 @@ function bindChampionshipEditor() {
   const title = document.getElementById("ctf-title");
   if (!form || !title) return;
   const config = window.ctfChampionshipConfig;
-  document.getElementById("navbar-root")?.classList.add("championship-admin-navbar");
-  const targetSelect = document.getElementById("editor-target");
-  const dateInput = document.getElementById("editor-date");
-  const dateLabel = document.getElementById("editor-date-label");
+  const backdrop = document.getElementById("countdown-editor-backdrop");
+  const editButton = document.getElementById("edit-championship-btn");
+  editButton.innerHTML = Icons.edit(16);
+  editButton.classList.remove("hidden");
 
   const localInput = (value) => {
     if (!value) return "";
@@ -172,47 +173,54 @@ function bindChampionshipEditor() {
     const pad = (number) => String(number).padStart(2, "0");
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
-  const edit = (part = null) => {
+  const edit = () => {
     document.getElementById("editor-title").value = config.title || "CTF Arena Cyber Championship";
-    const key = config.start_time && new Date(config.start_time) > new Date() ? "start_time" : "end_time";
-    targetSelect.value = key;
-    dateLabel.textContent = key === "start_time" ? "Start date and time" : "End date and time";
-    dateInput.value = part ? localInput(config[key]) : "";
-    form.classList.remove("hidden");
-  };
-  title.addEventListener("dblclick", () => {
-    edit();
+    const target = config.start_time && new Date(config.start_time) > new Date()
+      ? new Date(config.start_time)
+      : config.end_time ? new Date(config.end_time) : new Date();
+    const totalSeconds = Math.max(0, Math.floor((target.getTime() - Date.now()) / 1000));
+    document.getElementById("editor-days").value = Math.floor(totalSeconds / 86400);
+    document.getElementById("editor-hours").value = Math.floor((totalSeconds % 86400) / 3600);
+    document.getElementById("editor-minutes").value = Math.floor((totalSeconds % 3600) / 60);
+    document.getElementById("editor-seconds").value = totalSeconds % 60;
+    backdrop.classList.remove("hidden");
     document.getElementById("editor-title").focus();
-    document.getElementById("editor-title").select();
-  });
-  document.querySelectorAll("[data-countdown-part]").forEach((node) => node.addEventListener("dblclick", () => edit(node.dataset.countdownPart)));
-  targetSelect.addEventListener("change", () => {
-    const key = targetSelect.value;
-    dateLabel.textContent = key === "start_time" ? "Start date and time" : "End date and time";
-    dateInput.value = localInput(config[key]);
-  });
+  };
+  editButton.addEventListener("click", edit);
   document.getElementById("cancel-countdown-edit").addEventListener("click", () => {
     form.reset();
-    form.classList.add("hidden");
+    backdrop.classList.add("hidden");
+  });
+  backdrop.addEventListener("click", (event) => {
+    if (event.target === backdrop) backdrop.classList.add("hidden");
   });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const newTitle = document.getElementById("editor-title").value.trim();
-    const key = targetSelect.value;
-    const selectedDate = dateInput.value ? new Date(dateInput.value) : null;
-    const start = key === "start_time" && selectedDate ? selectedDate : (config.start_time ? new Date(config.start_time) : null);
-    const end = key === "end_time" && selectedDate ? selectedDate : (config.end_time ? new Date(config.end_time) : null);
-    if (!newTitle || (dateInput.value && Number.isNaN(selectedDate?.getTime())) || (start && end && end <= start)) {
-      showToast("Enter a valid title and time; the end must follow the start.", "error");
+    const days = Number(document.getElementById("editor-days").value);
+    const hours = Number(document.getElementById("editor-hours").value);
+    const minutes = Number(document.getElementById("editor-minutes").value);
+    const seconds = Number(document.getElementById("editor-seconds").value);
+    if (!newTitle || !Number.isInteger(days) || days < 0 || !Number.isInteger(hours) || hours < 0 || hours > 23 || !Number.isInteger(minutes) || minutes < 0 || minutes > 59 || !Number.isInteger(seconds) || seconds < 0 || seconds > 59) {
+      showToast("Enter a championship title and valid countdown values.", "error");
       return;
     }
     try {
-      const changes = { title: newTitle };
-      if (selectedDate) changes[key] = selectedDate.toISOString();
+      const targetDate = new Date(Date.now() + (((days * 24 + hours) * 60 + minutes) * 60 + seconds) * 1000);
+      const targetKey = config.end_time ? "end_time" : "start_time";
+      const changes = { title: newTitle, [targetKey]: targetDate.toISOString() };
+      if (targetKey === "start_time" && config.end_time && new Date(config.end_time) <= targetDate) {
+        showToast("Championship end must be later than the start.", "error");
+        return;
+      }
+      if (targetKey === "end_time" && config.start_time && new Date(config.start_time) >= targetDate) {
+        showToast("Championship end must be later than the start.", "error");
+        return;
+      }
       await api.patch("/admin/settings", changes);
       config.title = newTitle;
-      if (selectedDate) config[key] = selectedDate.toISOString();
-      form.classList.add("hidden");
+      config[targetKey] = targetDate.toISOString();
+      backdrop.classList.add("hidden");
       showToast("Championship updated", "success");
       await initCtfCountdown();
     } catch (error) {

@@ -82,10 +82,10 @@ function renderNavbar(profile) {
         <div class="navbar-actions">
           ${isAuth ? `
             <div style="display:flex; align-items:center; gap:0.75rem;">
-              <a href="/profile.html?username=${encodeURIComponent(profile.username)}" class="btn btn-sm btn-secondary navbar-user-control" style="font-family:var(--font-mono);text-transform:none;letter-spacing:normal;">
+              ${isAdmin ? "" : `<a href="/profile.html?username=${encodeURIComponent(profile.username)}" class="btn btn-sm btn-secondary navbar-user-control" style="font-family:var(--font-mono);text-transform:none;letter-spacing:normal;">
                 <span class="text-green">${escapeHtml(profile.username)}</span>
-                ${!isAdmin ? `<span class="text-dim">(${profile.total_score !== undefined ? profile.total_score : 0} pts)</span>` : ""}
-              </a>
+                <span class="text-dim">(${profile.total_score !== undefined ? profile.total_score : 0} pts)</span>
+              </a>`}
               <button type="button" id="logout-btn" class="btn btn-primary navbar-user-control navbar-signout-button" title="Sign out" aria-label="Sign out">
                 ${Icons.logOut(16)}
               </button>

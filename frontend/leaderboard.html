@@ -15,8 +15,6 @@
   <link rel="stylesheet" href="/css/pages.css">
   <link rel="stylesheet" href="/css/admin.css">
 
-  <!-- Chart.js for Score Timeline Progression -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="site-wrapper">
   <div id="navbar-root"></div>
@@ -38,21 +36,6 @@
       <!-- Search Input -->
       <div style="min-width: 240px;">
         <input type="text" id="leaderboard-search" class="form-input form-input-mono" placeholder="Search team or name...">
-      </div>
-    </div>
-
-    <!-- Timeline Chart Section -->
-    <div class="card" style="margin-bottom: var(--space-6);">
-      <div class="card-header">
-        <h2 style="font-size: var(--text-base); margin: 0;">Top Squad Score Timeline</h2>
-        <span class="text-dim text-mono text-xs">Cumulative Progression</span>
-      </div>
-      <div class="card-body" style="height: 260px; position: relative;">
-        <canvas id="timeline-chart"></canvas>
-        <div id="timeline-empty" style="display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-dim); font-family: var(--font-mono); font-size: var(--text-sm); text-align: center; padding: 2rem;">
-          <span style="color: var(--text-secondary); font-weight: 600;">No timeline progression recorded yet</span>
-          <span class="text-xs" style="color: var(--text-dim);">Solves and points will plot dynamically as teams submit flags.</span>
-        </div>
       </div>
     </div>
 

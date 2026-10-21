@@ -42,12 +42,13 @@
     <!-- CTF Competition Status & Countdown Banner -->
     <section class="card" style="margin-bottom: var(--space-12); background: linear-gradient(180deg, var(--bg-card), var(--bg-secondary)); border: 1px solid var(--border-medium);">
       <div class="card-body championship-banner" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-6); padding: var(--space-6);">
-        <div>
+        <div class="championship-heading-wrap">
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);">
             <span id="ctf-status-badge" class="badge badge-green">Competition Active</span>
             <span id="freeze-badge" class="badge badge-grey hidden">Scoreboard Frozen</span>
           </div>
           <h2 id="ctf-title" class="championship-title" style="font-size: var(--text-xl); margin: 0;">CTF Arena Cyber Championship</h2>
+          <button type="button" id="edit-championship-btn" class="championship-edit-button hidden" aria-label="Edit championship" title="Edit championship"></button>
         </div>
 
         <!-- Countdown Timer Blocks -->
@@ -72,15 +73,18 @@
       </div>
     </section>
 
-    <form id="countdown-editor" class="card hidden" style="max-width:560px;margin:0 auto var(--space-8);text-align:left;">
+    <div id="countdown-editor-backdrop" class="countdown-editor-backdrop hidden">
+    <form id="countdown-editor" class="card countdown-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="countdown-editor-heading">
       <div class="card-body">
-        <h2 style="font-size:var(--text-lg);margin:0 0 var(--space-4);">Edit Championship</h2>
+        <h2 id="countdown-editor-heading" style="font-size:var(--text-lg);margin:0 0 var(--space-4);">Edit Championship</h2>
         <div class="form-group"><label class="form-label" for="editor-title">Championship title</label><input id="editor-title" class="form-input" type="text" required minlength="3" maxlength="100"></div>
-        <div class="form-group"><label class="form-label" for="editor-target">Countdown target</label><select id="editor-target" class="form-select"><option value="start_time">Championship starts</option><option value="end_time">Championship ends</option></select></div>
-        <div class="form-group"><label id="editor-date-label" class="form-label" for="editor-date">Start date and time</label><input id="editor-date" class="form-input form-input-mono" type="datetime-local"><div class="form-helper">Leave the date blank to update only the title. Time uses your browser's local timezone and saves as UTC.</div></div>
+        <div class="form-group"><label class="form-label" for="editor-days">Days</label><input id="editor-days" class="form-input form-input-mono" type="number" min="0" max="36500" required></div>
+        <div class="form-group"><label class="form-label" for="editor-hours">Hours</label><input id="editor-hours" class="form-input form-input-mono" type="number" min="0" max="23" required></div>
+        <div class="form-group"><label class="form-label" for="editor-minutes">Minutes</label><input id="editor-minutes" class="form-input form-input-mono" type="number" min="0" max="59" required></div>
+        <div class="form-group"><label class="form-label" for="editor-seconds">Seconds</label><input id="editor-seconds" class="form-input form-input-mono" type="number" min="0" max="59" required></div>
         <div style="display:flex;gap:var(--space-2);justify-content:flex-end;"><button id="cancel-countdown-edit" type="button" class="btn btn-secondary">Cancel</button><button id="save-countdown-edit" type="submit" class="btn btn-primary">Save</button></div>
       </div>
-    </form>
+    </form></div>
 
     <!-- Top 5 Scoreboard Preview -->
     <section class="card" style="margin-bottom: var(--space-12);">
