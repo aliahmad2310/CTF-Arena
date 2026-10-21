@@ -7,9 +7,16 @@
 --       manipulation via direct Supabase client requests.
 -- ==============================================================================
 
--- ------------------------------------------------------------------------------
--- 1. Enable RLS on All Tables
--- ------------------------------------------------------------------------------
+-- The service_role key bypasses RLS but still needs SQL privileges. Explicitly
+-- grant the API role access to the application's public tables and sequences.
+GRANT USAGE ON SCHEMA public TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT USAGE, SELECT ON SEQUENCES TO service_role;
+
 ALTER TABLE public.ctf_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -65,6 +72,10 @@ DROP POLICY IF EXISTS "Profiles are publicly readable" ON public.profiles;
 CREATE POLICY "Profiles are publicly readable"
     ON public.profiles FOR SELECT
     USING (TRUE);
+
+-- Prevent PostgREST from resolving the service_role key to a role that lacks
+-- privileges even though service_role bypasses row-level security.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO service_role;
 
 DROP POLICY IF EXISTS "Users can update own display profile" ON public.profiles;
 CREATE POLICY "Users can update own display profile"
