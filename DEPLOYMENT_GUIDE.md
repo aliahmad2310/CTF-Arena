@@ -37,6 +37,7 @@ The Supabase publishable/anon key is intended for browser use. It is not a subst
   | --- | --- |
   | `ENV` | `production` |
   | `SUPABASE_URL` | Your Supabase Project URL |
+  | `SUPABASE_ANON_KEY` | Supabase publishable/anon key used by backend username/password login |
   | `SUPABASE_SERVICE_ROLE_KEY` | The newly rotated server-side secret key |
   | `SUPABASE_JWT_SECRET` | The newly rotated JWT signing secret expected by the API |
   | `FLAG_PEPPER` | A new, long, randomly generated secret; keep it stable after flags are created |
@@ -45,7 +46,7 @@ The Supabase publishable/anon key is intended for browser use. It is not a subst
   | `ALLOWED_ORIGINS` | `http://localhost:3000` initially; replace/add the exact frontend origin after creating the frontend project |
 
   Use comma-separated exact origins for `ALLOWED_ORIGINS`, with no path or trailing slash, for example `https://your-frontend.vercel.app`. Do not use `https://*.vercel.app`; the backend config uses an explicit origin allowlist, not a wildcard matcher. Include local origins only if needed. Do not put secrets in the `ALLOWED_ORIGINS` value.
-4. Deploy. Copy the assigned backend domain, such as `https://your-api.vercel.app`.
+4. Deploy. Copy the assigned backend domain, such as `https://your-api.vercel.app`. Username/password login requires the publishable/anon key to be set in the backend environment too.
 5. Check `https://your-api.vercel.app/health`. A healthy JSON response confirms the FastAPI function starts. Check `/docs` to confirm API routes load. `/health` alone does not verify Supabase credentials or database access; also check `/ctf/status` and a protected endpoint using a valid session.
 
 ## 3. Deploy the static frontend
