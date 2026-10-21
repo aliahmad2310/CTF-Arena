@@ -15,6 +15,11 @@ let chartInstance = null;
 let pollTimer = null;
 let currentProfile = null;
 let refreshIntervalSeconds = 15;
+const teamColors = new Map();
+const timelineColors = [
+  "#00ff66", "#00f0ff", "#fbbf24", "#f87171", "#a78bfa",
+  "#38bdf8", "#34d399", "#f472b6", "#e879f9", "#818cf8"
+];
 
 document.addEventListener("DOMContentLoaded", async () => {
   currentProfile = await getUserProfile();
@@ -247,7 +252,8 @@ async function fetchAndRenderTimeline() {
     const data = await api.get("/leaderboard/timeline");
     const emptyEl = document.getElementById("timeline-empty");
 
-    if (!data.series || data.series.length === 0) {
+    const seriesWithPoints = (data.series || []).filter((series) => series.points && series.points.length > 0);
+    if (seriesWithPoints.length === 0) {
       if (emptyEl) emptyEl.style.display = "flex";
       canvas.style.display = "none";
       return;
@@ -256,18 +262,19 @@ async function fetchAndRenderTimeline() {
     if (emptyEl) emptyEl.style.display = "none";
     canvas.style.display = "block";
 
-    // Distinct theme colors for lines
-    const colors = [
-      "#00ff66", "#00f0ff", "#fbbf24", "#f87171", "#a78bfa",
-      "#38bdf8", "#34d399", "#f472b6", "#e879f9", "#818cf8"
-    ];
-
-    const datasets = data.series.map((s, idx) => {
-      const color = colors[idx % colors.length];
+    const visibleColors = new Set();
+    const datasets = seriesWithPoints.map((s) => {
+      let color = teamColors.get(s.id);
+      if (!color || visibleColors.has(color)) {
+        color = timelineColors.find((candidate) => !visibleColors.has(candidate))
+          || timelineColors[visibleColors.size % timelineColors.length];
+        teamColors.set(s.id, color);
+      }
+      visibleColors.add(color);
       const points = s.points.map(p => ({
-        x: new Date(p.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        x: new Date(p.timestamp).getTime(),
         y: p.score
-      }));
+      })).sort((a, b) => a.x - b.x);
 
       return {
         label: s.name,
@@ -317,12 +324,25 @@ async function fetchAndRenderTimeline() {
         },
         scales: {
           x: {
+            type: "linear",
             grid: { color: "#1e293b" },
-            ticks: { color: "#64748b", font: { family: "monospace", size: 10 } }
+            ticks: {
+              color: "#64748b",
+              font: { family: "monospace", size: 10 },
+              callback: (value) => new Date(Number(value)).toLocaleString([], {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+              })
+            },
+            title: { display: true, text: "Solve time", color: "#94a3b8" }
           },
           y: {
             grid: { color: "#1e293b" },
-            ticks: { color: "#64748b", font: { family: "monospace", size: 10 } }
+            ticks: { color: "#64748b", font: { family: "monospace", size: 10 } },
+            title: { display: true, text: "Cumulative points", color: "#94a3b8" },
+            beginAtZero: true
           }
         }
       }

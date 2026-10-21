@@ -1,6 +1,7 @@
 import hmac
 import hashlib
 import jwt
+from jwt import PyJWKClient
 from typing import Dict, Any
 from fastapi import HTTPException, status
 from app.core.config import settings
@@ -8,20 +9,39 @@ from app.core.config import settings
 
 def verify_supabase_jwt(token: str) -> Dict[str, Any]:
     """
-    Validates a Supabase-issued Bearer JWT.
-    Verifies signature using SUPABASE_JWT_SECRET, checks expiration and audience,
-    and extracts subject (user_id).
+    Validates a Supabase-issued Bearer JWT using the project's JWKS or legacy
+    HS256 secret, and checks signature, expiration, issuer, and audience.
     """
     try:
-        # Supabase default algorithm is HS256 signed with the project JWT Secret
+        header = jwt.get_unverified_header(token)
+        algorithm = header.get("alg")
+
+        if algorithm == "HS256":
+            # Legacy Supabase projects use the shared JWT secret.
+            signing_key = settings.SUPABASE_JWT_SECRET
+        elif algorithm in {"ES256", "RS256", "EdDSA"}:
+            # Newer Supabase projects can use asymmetric signing keys. Resolve
+            # the key only from this configured project's public JWKS endpoint.
+            jwks_url = f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json"
+            signing_key = PyJWKClient(jwks_url, cache_keys=True, timeout=5).get_signing_key_from_jwt(token).key
+            if header.get("alg") is None:
+                raise jwt.InvalidTokenError("Missing signing algorithm")
+        else:
+            raise jwt.InvalidAlgorithmError("Unsupported Supabase JWT signing algorithm")
+
+        issuer = f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1"
         payload = jwt.decode(
             token,
-            settings.SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
+            signing_key,
+            algorithms=[algorithm],
+            audience="authenticated",
+            issuer=issuer,
             options={
                 "verify_signature": True,
                 "verify_exp": True,
-                "verify_aud": False  # Allow custom/standard Supabase audiences while checking claims below
+                "verify_aud": True,
+                "verify_iss": True,
+                "require": ["exp", "sub", "aud", "iss"]
             }
         )
 
@@ -39,7 +59,9 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication token has expired. Please log in again."
         )
-    except jwt.PyJWTError as exc:
+    except HTTPException:
+        raise
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Token verification failed: {str(exc)}"

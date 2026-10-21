@@ -13,7 +13,7 @@ function getSafeRedirectUrl() {
   const requestedUrl = new URLSearchParams(window.location.search).get("redirect");
   return requestedUrl && requestedUrl.startsWith("/") && !requestedUrl.startsWith("//")
     ? requestedUrl
-    : "/dashboard.html";
+    : "/";
 }
 
 document.addEventListener("DOMContentLoaded", async () => {

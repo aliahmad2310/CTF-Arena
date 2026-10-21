@@ -10,12 +10,14 @@ import { api } from "../api.js";
 import { escapeHtml, formatRelativeTime } from "../utils.js";
 import { renderStatusBadge } from "../ui.js";
 
-document.addEventListener("DOMContentLoaded", async () => {
-  let profile;
-  try {
-    profile = await requireAuth();
-  } catch {
-    return;
+export async function initializeDashboard(initialProfile = null) {
+  let profile = initialProfile;
+  if (!profile) {
+    try {
+      profile = await requireAuth();
+    } catch {
+      return;
+    }
   }
 
   await initLayout();
@@ -24,7 +26,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("dash-display-name").textContent = profile.display_name || profile.username;
 
   await loadDashboardData();
-});
+}
+
+// Keep old bookmarks working while the authenticated dashboard lives at '/'.
+if (/\/dashboard(?:\.html)?\/?$/.test(window.location.pathname)) {
+  window.location.replace("/");
+}
 
 async function loadDashboardData() {
   try {

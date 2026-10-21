@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // If already authenticated, redirect to dashboard
   const session = await getSession();
   if (session) {
-    window.location.href = "/dashboard.html";
+    window.location.replace("/");
     return;
   }
 
@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (data.session) {
         showToast("Registration successful! Redirecting...", "success");
         setTimeout(() => {
-          window.location.href = "/dashboard.html";
+          window.location.replace("/");
         }, 1000);
       } else {
         // Email confirmation is required by Supabase project settings

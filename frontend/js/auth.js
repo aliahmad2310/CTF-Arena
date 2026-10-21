@@ -74,7 +74,7 @@ export async function requireAuth() {
 
 /**
  * Route guard: Enforces that the user has role = 'admin'.
- * If regular user, redirects to /dashboard.html.
+ * If regular user, redirects to the root dashboard.
  * @returns {Promise<Object>}
  */
 export async function requireAdmin() {
@@ -82,7 +82,7 @@ export async function requireAdmin() {
   if (profile.role !== "admin") {
     showToast("Access restricted: Administrator rights required", "error");
     setTimeout(() => {
-      window.location.href = "/dashboard.html";
+      window.location.href = "/";
     }, 1200);
     throw new Error("Admin privileges required");
   }

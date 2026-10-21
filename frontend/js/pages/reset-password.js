@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       showToast("Password updated successfully. Redirecting to dashboard...", "success");
       setTimeout(() => {
-        window.location.href = "/dashboard.html";
+        window.location.replace("/");
       }, 1000);
     } catch (err) {
       submitBtn.disabled = false;

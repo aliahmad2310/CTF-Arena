@@ -63,7 +63,7 @@ function renderNavbar(profile) {
   root.innerHTML = `
     <nav class="site-navbar">
       <div class="container navbar-inner">
-        <a href="/index.html" class="navbar-brand">
+        <a href="/" class="navbar-brand">
           <img src="/assets/logo.svg" alt="" class="brand-logo" width="28" height="28">
           <span>${CONFIG.PLATFORM_NAME}</span>
         </a>
@@ -73,7 +73,7 @@ function renderNavbar(profile) {
           <li><a href="/leaderboard.html" class="nav-link ${currentPath.includes("/leaderboard.html") ? "active" : ""}">Leaderboard</a></li>
           ${isAuth ? `
             <li><a href="/team.html" class="nav-link ${currentPath.includes("/team.html") ? "active" : ""}">Team</a></li>
-            <li><a href="/dashboard.html" class="nav-link ${currentPath.includes("/dashboard.html") ? "active" : ""}">Dashboard</a></li>
+            <li><a href="/" class="nav-link ${currentPath === "/" || currentPath === "/index.html" ? "active" : ""}">Dashboard</a></li>
           ` : ""}
           ${isAdmin ? `
             <li><a href="/admin/monitor.html" class="nav-link text-cyan ${currentPath.includes("/admin/") ? "active" : ""}">Admin Console</a></li>

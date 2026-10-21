@@ -18,6 +18,8 @@ def test_jwt_verification_and_claims():
         "sub": "b2c12a64-0000-4000-a000-000000000001",
         "email": "agent@ctfarena.local",
         "role": "authenticated",
+        "aud": "authenticated",
+        "iss": f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1",
         "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
     }
     token = jwt.encode(valid_payload, settings.SUPABASE_JWT_SECRET, algorithm="HS256")
@@ -28,6 +30,8 @@ def test_jwt_verification_and_claims():
     # Expired token rejection
     expired_payload = {
         "sub": "b2c12a64-0000-4000-a000-000000000001",
+        "aud": "authenticated",
+        "iss": f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1",
         "exp": int((datetime.now(timezone.utc) - timedelta(hours=1)).timestamp())
     }
     expired_token = jwt.encode(expired_payload, settings.SUPABASE_JWT_SECRET, algorithm="HS256")
