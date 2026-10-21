@@ -9,8 +9,35 @@ import { escapeHtml, debounce } from "../utils.js";
 let activeTab = "teams";
 let currentProfile = null;
 let isAdmin = false;
-let pollTimer = null;
+let refreshInterval = 15;
+let remainingSeconds = 15;
+let countdownTimer = null;
 const PAGE_SIZE = 100;
+
+function updateCountdownDisplay() {
+  const secEl = document.getElementById("leaderboard-countdown-sec");
+  if (secEl) {
+    secEl.textContent = String(remainingSeconds);
+  }
+}
+
+function startCountdown() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  remainingSeconds = refreshInterval;
+  updateCountdownDisplay();
+
+  countdownTimer = setInterval(async () => {
+    if (document.hidden) return;
+    remainingSeconds--;
+    if (remainingSeconds <= 0) {
+      remainingSeconds = refreshInterval;
+      updateCountdownDisplay();
+      await refreshLeaderboard(true);
+    } else {
+      updateCountdownDisplay();
+    }
+  }, 1000);
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   currentProfile = await getUserProfile();
@@ -31,14 +58,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     const subtitle = document.getElementById("leaderboard-subtitle");
     if (subtitle) subtitle.textContent = "Admin view: click a user or team to inspect lab progress and activity.";
   }
+
+  try {
+    const status = await api.get("/ctf/status");
+    if (status && typeof status.leaderboard_refresh_seconds === "number" && status.leaderboard_refresh_seconds >= 1) {
+      refreshInterval = status.leaderboard_refresh_seconds;
+    }
+  } catch (err) {
+    console.warn("Could not query CTF status for scoreboard refresh interval:", err);
+  }
+
   await refreshLeaderboard();
-  pollTimer = setInterval(() => {
-    if (!document.hidden) void refreshLeaderboard(true);
-  }, 15000);
+  startCountdown();
 });
 
 window.addEventListener("beforeunload", () => {
-  if (pollTimer) clearInterval(pollTimer);
+  if (countdownTimer) clearInterval(countdownTimer);
 });
 
 function bindTabs() {
@@ -86,6 +121,10 @@ function updateHeader() {
 }
 
 async function refreshLeaderboard(background = false) {
+  if (!background) {
+    remainingSeconds = refreshInterval;
+    updateCountdownDisplay();
+  }
   const body = document.getElementById("leaderboard-tbody");
   const columns = activeTab === "teams" ? (isAdmin ? 6 : 5) : (isAdmin ? 5 : 4);
   if (!background) body.innerHTML = `<tr><td colspan="${columns}" style="text-align:center;padding:var(--space-6);">Loading standings...</td></tr>`;

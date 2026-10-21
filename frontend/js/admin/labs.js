@@ -30,7 +30,7 @@ async function loadLabs() {
     labsList = await api.get("/rooms");
     renderLabs(labsList);
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -38,7 +38,7 @@ function renderLabs(labs) {
   const tbody = document.getElementById("labs-tbody");
 
   if (!labs || labs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">No labs configured yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">No labs configured yet.</td></tr>`;
     return;
   }
 
@@ -60,6 +60,7 @@ function renderLabs(labs) {
           </a>
         </td>
         <td class="text-mono text-dim text-xs">${escapeHtml(lab.slug)}</td>
+        <td class="text-mono text-green font-bold text-xs">${lab.total_points || 0} PTS</td>
         <td><span class="badge ${diffBadge}">${escapeHtml(lab.difficulty)}</span></td>
         <td>
           <span class="badge badge-green">Published</span>
@@ -139,6 +140,16 @@ function initCreateButton() {
             <textarea id="ml-desc" class="form-textarea" rows="3" placeholder="Overview of the attack vectors simulated in this lab..."></textarea>
           </div>
           <div class="form-group">
+            <label class="form-label" for="ml-points">Points</label>
+            <input type="number" id="ml-points" class="form-input form-input-mono" min="0" value="100" required>
+            <div class="form-helper">Score points awarded upon solving this lab.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ml-flag">Lab Flag (Secret)</label>
+            <input type="text" id="ml-flag" class="form-input form-input-mono" placeholder="CTF{secret_flag_value}">
+            <div class="form-helper">Stored securely on the backend as a salted SHA-256 hash. Never exposed to competitors.</div>
+          </div>
+          <div class="form-group">
             <label class="form-label" for="ml-file">File Attachment / Lab Media (Optional)</label>
             <input type="file" id="ml-file" class="form-input" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.zip">
             <div class="form-helper">Upload a lab diagram, image, PDF guide, or non-executable archive (max 10MB). Script execution is blocked.</div>
@@ -164,6 +175,8 @@ function initCreateButton() {
         const difficulty = document.getElementById("ml-difficulty").value;
         const tags = document.getElementById("ml-tags").value.split(",").map((t) => t.trim()).filter(Boolean);
         const description = document.getElementById("ml-desc").value.trim();
+        const points = parseInt(document.getElementById("ml-points").value, 10);
+        const flag = document.getElementById("ml-flag").value.trim();
         const display_order = parseInt(document.getElementById("ml-order").value, 10) || 0;
         const is_published = document.getElementById("ml-published").checked;
         const fileInput = document.getElementById("ml-file");
@@ -183,7 +196,7 @@ function initCreateButton() {
         }
 
         try {
-          await api.post("/admin/rooms", {
+          const payload = {
             title,
             slug,
             difficulty,
@@ -192,7 +205,12 @@ function initCreateButton() {
             display_order,
             is_published,
             cover_image_url,
-          });
+            points: isNaN(points) ? 100 : points,
+          };
+          if (flag) {
+            payload.flag = flag;
+          }
+          await api.post("/admin/rooms", payload);
           showToast(`Lab '${title}' created successfully`, "success");
           await loadLabs();
           return true;
@@ -244,6 +262,16 @@ function openEditModal(lab) {
           <textarea id="el-desc" class="form-textarea" rows="3">${escapeHtml(lab.description || "")}</textarea>
         </div>
         <div class="form-group">
+          <label class="form-label" for="el-points">Points</label>
+          <input type="number" id="el-points" class="form-input form-input-mono" min="0" value="${lab.total_points || 100}" required>
+          <div class="form-helper">Score points awarded upon solving this lab.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="el-flag">Lab Flag (Secret)</label>
+          <input type="text" id="el-flag" class="form-input form-input-mono" placeholder="Leave empty to keep existing secret flag">
+          <div class="form-helper">Stored securely on the backend as a salted SHA-256 hash. Leave empty unless updating.</div>
+        </div>
+        <div class="form-group">
           <label class="form-label" for="el-file">File Attachment / Lab Media (Optional)</label>
           ${lab.cover_image_url ? `
             <div class="text-xs text-dim" style="margin-bottom:0.25rem;">
@@ -270,6 +298,8 @@ function openEditModal(lab) {
       const difficulty = document.getElementById("el-difficulty").value;
       const tags = document.getElementById("el-tags").value.split(",").map((t) => t.trim()).filter(Boolean);
       const description = document.getElementById("el-desc").value.trim();
+      const points = parseInt(document.getElementById("el-points").value, 10);
+      const flag = document.getElementById("el-flag").value.trim();
       const display_order = parseInt(document.getElementById("el-order").value, 10) || 0;
       const fileInput = document.getElementById("el-file");
 
@@ -288,7 +318,7 @@ function openEditModal(lab) {
       }
 
       try {
-        await api.patch(`/admin/rooms/${lab.id}`, {
+        const payload = {
           title,
           slug,
           difficulty,
@@ -296,7 +326,12 @@ function openEditModal(lab) {
           description,
           display_order,
           cover_image_url,
-        });
+          points: isNaN(points) ? undefined : points,
+        };
+        if (flag) {
+          payload.flag = flag;
+        }
+        await api.patch(`/admin/rooms/${lab.id}`, payload);
         showToast("Lab details updated", "success");
         await loadLabs();
         return true;

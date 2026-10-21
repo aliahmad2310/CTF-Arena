@@ -59,8 +59,8 @@
 
           <div class="form-group">
             <label class="form-label" for="cs-leaderboard-refresh">Leaderboard Auto-Refresh Interval (Seconds)</label>
-            <input type="number" id="cs-leaderboard-refresh" class="form-input form-input-mono" min="0" max="3600" required>
-            <div class="form-helper">Controls how frequently the public scoreboard updates (0 to pause automatic refresh; standard is 15s).</div>
+            <input type="number" id="cs-leaderboard-refresh" class="form-input form-input-mono" min="1" max="3600" required>
+            <div class="form-helper">Controls how frequently the public scoreboard updates (minimum 1 second; default is 15s).</div>
           </div>
 
           <!-- Toggles -->

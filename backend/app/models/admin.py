@@ -13,6 +13,9 @@ class AdminRoomCreateRequest(BaseModel):
     cover_image_url: Optional[str] = None
     is_published: bool = False
     display_order: int = 0
+    points: Optional[int] = Field(None, ge=0)
+    flag: Optional[str] = Field(None, min_length=1)
+    is_case_sensitive: Optional[bool] = True
 
 
 class AdminRoomUpdateRequest(BaseModel):
@@ -24,6 +27,9 @@ class AdminRoomUpdateRequest(BaseModel):
     cover_image_url: Optional[str] = None
     is_published: Optional[bool] = None
     display_order: Optional[int] = None
+    points: Optional[int] = Field(None, ge=0)
+    flag: Optional[str] = Field(None, min_length=1)
+    is_case_sensitive: Optional[bool] = True
 
 
 class AdminChallengeCreateRequest(BaseModel):
@@ -86,7 +92,7 @@ class AdminCtfSettingsUpdateRequest(BaseModel):
     freeze_leaderboard: Optional[bool] = None
     dynamic_scoring: Optional[bool] = None
     max_team_size: Optional[int] = Field(None, ge=1)
-    leaderboard_refresh_seconds: Optional[int] = Field(None, ge=0, le=3600)
+    leaderboard_refresh_seconds: Optional[int] = Field(None, ge=1, le=3600)
 
     @model_validator(mode="after")
     def validate_time_order(self):

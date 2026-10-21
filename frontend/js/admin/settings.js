@@ -80,6 +80,11 @@ function initFormSubmit() {
     const freeze_leaderboard = document.getElementById("cs-freeze").checked;
     const dynamic_scoring = document.getElementById("cs-dynamic").checked;
 
+    if (isNaN(leaderboard_refresh_seconds) || leaderboard_refresh_seconds < 1) {
+      showToast("Leaderboard auto-refresh interval must be at least 1 second", "error");
+      return;
+    }
+
     saveBtn.disabled = true;
     saveBtn.textContent = "Saving Configuration...";
 

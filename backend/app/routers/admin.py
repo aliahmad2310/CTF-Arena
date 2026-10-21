@@ -79,11 +79,57 @@ async def create_room(
 ):
     supabase = get_supabase_client()
     try:
-        data = payload.model_dump()
-        data["created_at"] = datetime.now(timezone.utc).isoformat()
-        data["updated_at"] = data["created_at"]
-        supabase.table("rooms").insert(data).execute()
+        now_iso = datetime.now(timezone.utc).isoformat()
+        room_data = {
+            "title": payload.title,
+            "slug": payload.slug,
+            "description": payload.description,
+            "difficulty": payload.difficulty,
+            "tags": payload.tags,
+            "cover_image_url": payload.cover_image_url,
+            "is_published": payload.is_published,
+            "display_order": payload.display_order,
+            "created_at": now_iso,
+            "updated_at": now_iso
+        }
+        res = supabase.table("rooms").insert(room_data).execute()
+        created_room = res.data[0] if res.data else None
+
+        if created_room and (payload.points is not None or payload.flag is not None):
+            room_id = created_room["id"]
+            points = payload.points if payload.points is not None else 100
+            ch_data = {
+                "room_id": str(room_id),
+                "title": payload.title,
+                "description": payload.description or "",
+                "category": "Misc",
+                "points": points,
+                "difficulty": payload.difficulty,
+                "is_published": payload.is_published,
+                "display_order": 0,
+                "created_at": now_iso,
+                "updated_at": now_iso
+            }
+            ch_res = supabase.table("challenges").insert(ch_data).execute()
+            if ch_res.data and payload.flag:
+                challenge_id = ch_res.data[0]["id"]
+                salt = secrets.token_hex(16)
+                flag_hash = compute_flag_hash(
+                    payload.flag,
+                    salt,
+                    payload.is_case_sensitive if payload.is_case_sensitive is not None else True
+                )
+                supabase.table("challenge_flags").insert({
+                    "challenge_id": challenge_id,
+                    "flag_hash": flag_hash,
+                    "salt": salt,
+                    "is_case_sensitive": payload.is_case_sensitive if payload.is_case_sensitive is not None else True,
+                    "created_at": now_iso
+                }).execute()
+
         return MessageResponse(message=f"Lab '{payload.title}' created successfully")
+    except HTTPException:
+        raise
     except Exception as exc:
         if "unique" in str(exc).lower():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A lab with this slug already exists")
@@ -97,16 +143,84 @@ async def update_room(
     admin: Dict[str, Any] = Depends(require_admin)
 ):
     supabase = get_supabase_client()
-    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
-    if not updates:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No update fields specified")
+    raw_payload = payload.model_dump(exclude_unset=True)
+    room_fields = {"title", "slug", "description", "difficulty", "tags", "cover_image_url", "is_published", "display_order"}
+    updates = {k: raw_payload[k] for k in room_fields if k in raw_payload}
 
-    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
-    try:
-        supabase.table("rooms").update(updates).eq("id", str(id)).execute()
-        return MessageResponse(message="Lab updated successfully")
-    except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Update failed: {str(exc)}")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if updates:
+        updates["updated_at"] = now_iso
+        try:
+            supabase.table("rooms").update(updates).eq("id", str(id)).execute()
+        except Exception as exc:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Update failed: {str(exc)}")
+
+    # Update or create challenge and flag if points or flag are provided
+    if payload.points is not None or payload.flag is not None:
+        try:
+            ch_res = supabase.table("challenges").select("*").eq("room_id", str(id)).order("display_order").limit(1).execute()
+            if ch_res.data and len(ch_res.data) > 0:
+                ch_row = ch_res.data[0]
+                ch_id = ch_row["id"]
+                ch_updates = {"updated_at": now_iso}
+                if payload.points is not None:
+                    ch_updates["points"] = payload.points
+                if payload.title is not None:
+                    ch_updates["title"] = payload.title
+                if payload.difficulty is not None:
+                    ch_updates["difficulty"] = payload.difficulty
+                if payload.is_published is not None:
+                    ch_updates["is_published"] = payload.is_published
+                supabase.table("challenges").update(ch_updates).eq("id", ch_id).execute()
+
+                if payload.flag:
+                    salt = secrets.token_hex(16)
+                    flag_hash = compute_flag_hash(
+                        payload.flag,
+                        salt,
+                        payload.is_case_sensitive if payload.is_case_sensitive is not None else True
+                    )
+                    supabase.table("challenge_flags").upsert({
+                        "challenge_id": ch_id,
+                        "flag_hash": flag_hash,
+                        "salt": salt,
+                        "is_case_sensitive": payload.is_case_sensitive if payload.is_case_sensitive is not None else True
+                    }, on_conflict="challenge_id").execute()
+            else:
+                room_info_res = supabase.table("rooms").select("*").eq("id", str(id)).limit(1).execute()
+                room_info = room_info_res.data[0] if room_info_res.data else {}
+                new_ch = {
+                    "room_id": str(id),
+                    "title": payload.title or room_info.get("title", "Lab Flag"),
+                    "description": payload.description or room_info.get("description", ""),
+                    "category": "Misc",
+                    "points": payload.points if payload.points is not None else 100,
+                    "difficulty": payload.difficulty or room_info.get("difficulty", "Medium"),
+                    "is_published": payload.is_published if payload.is_published is not None else room_info.get("is_published", True),
+                    "display_order": 0,
+                    "created_at": now_iso,
+                    "updated_at": now_iso
+                }
+                inserted_ch = supabase.table("challenges").insert(new_ch).execute()
+                if inserted_ch.data and payload.flag:
+                    new_ch_id = inserted_ch.data[0]["id"]
+                    salt = secrets.token_hex(16)
+                    flag_hash = compute_flag_hash(
+                        payload.flag,
+                        salt,
+                        payload.is_case_sensitive if payload.is_case_sensitive is not None else True
+                    )
+                    supabase.table("challenge_flags").insert({
+                        "challenge_id": new_ch_id,
+                        "flag_hash": flag_hash,
+                        "salt": salt,
+                        "is_case_sensitive": payload.is_case_sensitive if payload.is_case_sensitive is not None else True,
+                        "created_at": now_iso
+                    }).execute()
+        except Exception as exc:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Challenge/flag configuration failed: {str(exc)}")
+
+    return MessageResponse(message="Lab updated successfully")
 
 
 @router.delete("/rooms/{id}", response_model=MessageResponse)

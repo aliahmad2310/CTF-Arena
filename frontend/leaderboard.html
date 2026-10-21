@@ -24,9 +24,12 @@
     <!-- Header -->
     <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-6);">
       <div>
-        <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-1);">
+        <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-1); flex-wrap: wrap;">
           <h1 style="font-size: var(--text-3xl); margin: 0;">Global Scoreboard</h1>
           <span class="badge badge-green">Live Feed</span>
+          <span id="leaderboard-countdown-badge" class="badge badge-grey font-mono" style="font-size: var(--text-xs); letter-spacing: 0.05em;" title="Time until next scoreboard data refresh">
+            Updating in <span id="leaderboard-countdown-sec">15</span>s
+          </span>
         </div>
         <p id="leaderboard-subtitle" class="text-dim" style="margin: 0; font-size: var(--text-sm);">
           Live rankings update automatically. Earliest timestamp breaks score ties.

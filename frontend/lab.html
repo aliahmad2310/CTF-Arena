@@ -55,18 +55,43 @@
       </div>
     </div>
 
-    <!-- Challenges Header -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
-      <h2 style="font-size: var(--text-xl); margin: 0;">Challenges in this Lab</h2>
-      <span id="challenges-count-badge" class="badge badge-grey">0 Challenges</span>
+    <!-- Lab Materials / Download Attachment Area -->
+    <div id="lab-material-section" class="card" style="margin-bottom: var(--space-6); display: none;">
+      <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <h2 style="font-size: var(--text-base); margin: 0;">Lab Target Material &amp; Artifacts</h2>
+        <span class="badge badge-grey">Downloadable Material</span>
+      </div>
+      <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4);">
+        <div>
+          <div id="material-filename" class="font-mono font-bold" style="font-size: var(--text-sm); margin-bottom: 0.25rem;">Target File</div>
+          <div class="text-dim text-xs">Download and analyze the lab file, diagram, or artifact to extract the flag.</div>
+        </div>
+        <a id="material-download-btn" href="#" target="_blank" download class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+          Download File
+        </a>
+      </div>
     </div>
 
-    <!-- Challenges List Grid -->
-    <div id="challenges-container" class="flex-col gap-4">
-      <!-- Loading Skeleton -->
-      <div class="card" style="padding: var(--space-4);">
-        <div class="skeleton" style="height: 20px; width: 40%; margin-bottom: var(--space-2);"></div>
-        <div class="skeleton" style="height: 14px; width: 70%;"></div>
+    <!-- Flag Submission Area -->
+    <div class="card" style="margin-bottom: var(--space-8);">
+      <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <h2 style="font-size: var(--text-base); margin: 0;">Submit Lab Flag</h2>
+        <span id="submission-status-indicator" class="badge badge-grey font-mono">Unsolved</span>
+      </div>
+      <div class="card-body">
+        <p class="text-dim text-sm" style="margin-top: 0; margin-bottom: var(--space-4);">
+          Enter the discovered flag below to complete this lab. Server verification validates the flag in real-time.
+        </p>
+        <form id="lab-flag-form" style="display: flex; flex-direction: column; gap: var(--space-3); max-width: 600px;">
+          <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+            <label class="sr-only" for="lab-flag-input">Lab Flag</label>
+            <input type="text" id="lab-flag-input" class="form-input form-input-mono" placeholder="CTF{flag_goes_here}" style="flex: 1; min-width: 240px;" required>
+            <button type="submit" id="lab-flag-submit-btn" class="btn btn-primary" style="white-space: nowrap;">
+              Confirm &amp; Submit Flag
+            </button>
+          </div>
+          <div id="flag-feedback-msg" class="text-xs font-mono hidden" style="padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);"></div>
+        </form>
       </div>
     </div>
   </main>

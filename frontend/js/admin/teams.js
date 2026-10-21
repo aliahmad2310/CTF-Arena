@@ -110,7 +110,7 @@ async function loadTeams() {
     renderTeams(teams.items);
     renderPagination(teams.total);
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -131,7 +131,7 @@ function renderTeams(teams) {
   const tbody = document.getElementById("teams-tbody");
 
   if (!teams || teams.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">No teams found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">No teams found.</td></tr>`;
     return;
   }
 
@@ -139,6 +139,8 @@ function renderTeams(teams) {
   teams.forEach((t) => {
     const captain = t.profiles || {};
     const captainName = captain.username || "Unassigned";
+    const members = t.members || [];
+    const maxMembers = t.max_members || 4;
 
     html += `
       <tr>
@@ -152,16 +154,33 @@ function renderTeams(teams) {
             ${escapeHtml(captainName)}
           </a>
         </td>
-        <td>
-          <div class="text-xs" style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.5rem;">
-            ${(t.members || []).map((member) => `<span class="badge badge-grey">${escapeHtml(member.username)} <button type="button" class="remove-member-btn" aria-label="Remove ${escapeHtml(member.username)} from ${escapeHtml(t.name)}" data-team-id="${t.id}" data-user-id="${member.id}" data-username="${escapeHtml(member.username)}" style="border:0;background:transparent;color:inherit;cursor:pointer;">Remove</button></span>`).join("") || `<span class="text-dim">No members</span>`}
+        <td style="min-width: 220px;">
+          <div class="team-members-list" style="display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-bottom: 0.5rem;">
+            ${members.map((member) => `
+              <span class="badge badge-grey" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.5rem;">
+                <span>${escapeHtml(member.username)}</span>
+                <button type="button" class="remove-member-btn" aria-label="Remove ${escapeHtml(member.username)} from ${escapeHtml(t.name)}" data-team-id="${t.id}" data-user-id="${member.id}" data-username="${escapeHtml(member.username)}" style="border: 0; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 0.75rem; padding: 0; text-decoration: underline;">
+                  Remove
+                </button>
+              </span>
+            `).join("") || `<span class="text-dim text-xs">No members</span>`}
           </div>
-          <button type="button" class="btn btn-xs btn-outline add-member-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}">Add account</button>
-          <div class="text-dim text-xs" style="margin-top:0.5rem;">Capacity: ${(t.members || []).length} / ${t.max_members || 4}</div>
-          <div style="display:flex;gap:0.35rem;align-items:center;margin-top:0.35rem;">
-            <label class="text-xs text-dim" for="team-capacity-${t.id}">Max:</label>
-            <input id="team-capacity-${t.id}" type="number" class="form-input form-input-mono" min="1" max="100" value="${t.max_members || 4}" style="width:5rem;padding:0.25rem 0.4rem;">
-            <button type="button" class="btn btn-xs btn-secondary capacity-edit-btn" data-id="${t.id}">Save</button>
+          <div>
+            <button type="button" class="btn btn-xs btn-outline add-member-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}" style="font-size: 0.72rem; padding: 0.2rem 0.6rem;">
+              + Add Account
+            </button>
+          </div>
+        </td>
+        <td style="white-space: nowrap; min-width: 140px;">
+          <div class="text-xs font-mono" style="color: ${members.length >= maxMembers ? 'var(--status-amber-text)' : 'var(--text-dim)'}; margin-bottom: 0.4rem;">
+            Capacity: ${members.length} / ${maxMembers}
+          </div>
+          <div style="display: flex; gap: 0.35rem; align-items: center;">
+            <label class="sr-only" for="team-capacity-${t.id}">Max members</label>
+            <input id="team-capacity-${t.id}" type="number" class="form-input form-input-mono" min="1" max="100" value="${maxMembers}" style="width: 4.5rem; padding: 0.2rem 0.4rem; height: 1.85rem; font-size: 0.75rem;">
+            <button type="button" class="btn btn-xs btn-secondary capacity-edit-btn" data-id="${t.id}" style="height: 1.85rem; padding: 0 0.6rem;">
+              Save
+            </button>
           </div>
         </td>
         <td class="text-dim text-mono text-xs">${formatDate(t.created_at)}</td>

@@ -1,10 +1,14 @@
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-from app.core.deps import get_optional_current_user
+from app.core.deps import get_optional_current_user, get_current_user
+from app.core.rate_limit import limiter
+from app.core.security import verify_flag
 from app.db.client import get_supabase_client
 from app.models.room import RoomListItem, RoomDetailResponse, ChallengeSummaryItem
+from app.models.challenge import FlagSubmitRequest, FlagSubmitResponse
+from app.services.flag_service import process_flag_submission
 
 router = APIRouter(prefix="/rooms", tags=["Labs"])
 
@@ -235,3 +239,72 @@ async def get_room_details(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving lab details: {str(exc)}"
         )
+
+
+@router.post("/{slug}/submit", response_model=FlagSubmitResponse)
+@limiter.limit("10/minute")
+async def submit_room_flag(
+    request: Request,
+    slug: str,
+    payload: FlagSubmitRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Submits a flag directly to a lab. Validates against challenges associated with the lab.
+    Awards points, calculates First Blood, updates lab progress, and logs audit events.
+    Rate limited to 10 attempts per minute per user/IP.
+    """
+    supabase = get_supabase_client()
+    try:
+        room_res = supabase.table("rooms").select("id, is_published, slug, title").eq("slug", slug).limit(1).execute()
+        if not room_res.data:
+            room_res = supabase.table("rooms").select("id, is_published, slug, title").eq("id", slug).limit(1).execute()
+
+        if not room_res.data or len(room_res.data) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Lab '{slug}' not found"
+            )
+
+        room = room_res.data[0]
+        room_id = room["id"]
+
+        if not room.get("is_published") and current_user.get("role") != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Lab is not currently published"
+            )
+
+        ch_res = supabase.table("challenges").select("id, is_published").eq("room_id", room_id).order("display_order").execute()
+        challenges = ch_res.data or []
+        if not challenges:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No challenges or flags found for this lab"
+            )
+
+        # Check if the submitted flag matches any challenge flag for this room
+        matched_challenge_id = None
+        for ch in challenges:
+            c_id = ch["id"]
+            flag_res = supabase.table("challenge_flags").select("flag_hash, salt, is_case_sensitive").eq("challenge_id", c_id).limit(1).execute()
+            if flag_res.data and len(flag_res.data) > 0:
+                flag_row = flag_res.data[0]
+                if verify_flag(payload.flag, flag_row["salt"], flag_row["flag_hash"], flag_row.get("is_case_sensitive", True)):
+                    matched_challenge_id = c_id
+                    break
+
+        target_challenge_id = matched_challenge_id or challenges[0]["id"]
+        return await process_flag_submission(
+            challenge_id=str(target_challenge_id),
+            submitted_flag=payload.flag,
+            user=current_user
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Flag submission error: {str(exc)}"
+        )
+
