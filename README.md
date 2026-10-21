@@ -447,6 +447,7 @@ Follow this guide to provision a fresh Supabase project for CTF Arena:
    - Confirm the query reports one row. If it reports zero rows, look up the account in **Authentication > Users** and ensure the `profiles` row uses the same user ID. This reset changes the password hash but does not change the account role.
    - To promote an existing account, use `UPDATE public.profiles SET role = 'admin' WHERE username = 'your_username';`.
   - Log in at `/login` using the username and new password. Public registration and email recovery are disabled; administrators create accounts and set/reset passwords from the admin panel.
+  - Supabase **Authentication > Sign In / Providers > Email** must have password sign-in enabled. The application UI is username-only and does not send email; Supabase Auth uses an internal, non-deliverable alias for each provisioned account. Disabling the Email provider makes Supabase reject password login.
 
 ---
 

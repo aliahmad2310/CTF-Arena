@@ -69,6 +69,11 @@ async def login_with_username(request: Request, payload: UsernameLoginRequest):
         except Exception as exc:
             logging.getLogger("ctf-arena.auth").exception("Supabase rejected username login")
             message = str(exc).lower()
+            if "email logins are disabled" in message or "email provider is disabled" in message:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Supabase Auth email/password provider is disabled. Enable Email login in Supabase Auth settings; users will still sign in here with usernames, and no email address is requested or sent."
+                ) from exc
             if "invalid login credentials" in message or "invalid_credentials" in message:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,

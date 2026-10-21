@@ -69,6 +69,7 @@ The Supabase publishable/anon key is intended for browser use. It is not a subst
 2. In Supabase **Authentication** -> **URL Configuration**, set the Site URL to the frontend domain and add the appropriate frontend callback/redirect URLs.
 3. If using Vercel Preview deployments, add each allowed preview origin explicitly or use a stable preview domain. Do not allow every `vercel.app` subdomain in production.
 4. For a custom domain, update `ALLOWED_ORIGINS`, Supabase redirect settings, and `frontend/js/config.js` as necessary, then redeploy both projects.
+5. In Supabase **Authentication** -> **Sign In / Providers** -> **Email**, keep the Email provider's password-login capability enabled. CTF Arena's UI remains username/password-only and doesn't ask for or send email; internally Supabase Auth requires an email identifier, so admin-created accounts receive a non-deliverable `@users.ctf-arena.invalid` alias. Public signup stays removed. If email/password provider is disabled, `/auth/login` returns a configuration error even when the username and password are correct.
 
 ## 5. Verify the deployment
 
