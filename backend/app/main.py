@@ -24,7 +24,19 @@ app = FastAPI(
     description="High-performance backend API powering the CTF Arena cybersecurity platform.",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    redirect_slashes=False
+)
+
+# Enable CORS for explicit origins and Vercel cloud domains
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origin_regex=r"^https://.*\.vercel\.app$",
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 
@@ -129,16 +141,3 @@ async def get_ctf_status():
         server_time=datetime.now(timezone.utc)
     )
 
-
-# Keep CORS outside Starlette's server-error middleware so generated 500
-# responses also receive CORS headers. Otherwise browsers hide the useful
-# JSON error and report only a CORS failure.
-fastapi_app = app
-app = CORSMiddleware(
-    app=fastapi_app,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["Content-Disposition"],
-)

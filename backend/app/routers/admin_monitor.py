@@ -71,7 +71,7 @@ async def get_users_progress(
     status: Optional[str] = Query(None, description="Filter status: completed, in_progress, not_started"),
     online: bool = Query(False, description="Filter only users active within window"),
     sort_by: str = Query("registered_at", description="Field to sort on"),
-    order: str = Query("desc", regex="^(asc|desc)$", description="Sort direction"),
+    order: str = Query("desc", pattern="^(asc|desc)$", description="Sort direction"),
     _admin=Depends(require_admin)
 ):
     """
@@ -134,7 +134,7 @@ async def get_lab_detail(
 
 @router.get("/matrix", response_model=MatrixResponse)
 async def get_matrix(
-    mode: str = Query("users", regex="^(users|teams)$", description="Aggregation dimension: users or teams"),
+    mode: str = Query("users", pattern="^(users|teams)$", description="Aggregation dimension: users or teams"),
     _admin=Depends(require_admin)
 ):
     """
@@ -169,7 +169,7 @@ async def export_users_csv(_admin=Depends(require_admin)):
 
 @router.get("/export/matrix.csv")
 async def export_matrix_csv(
-    mode: str = Query("users", regex="^(users|teams)$"),
+    mode: str = Query("users", pattern="^(users|teams)$"),
     _admin=Depends(require_admin)
 ):
     """
