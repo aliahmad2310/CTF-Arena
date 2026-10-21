@@ -32,24 +32,33 @@ async def get_overview(_admin=Depends(require_admin)):
 
 
 @router.get("/live", response_model=List[LiveActiveUserItem])
-async def get_live_users(_admin=Depends(require_admin)):
+async def get_live_users(
+    lab_id: Optional[UUID] = Query(None),
+    team_id: Optional[UUID] = Query(None),
+    _admin=Depends(require_admin),
+):
     """
     Returns live online competitors who have transmitted a heartbeat within
     the active window, including their current lab and challenge context.
     """
-    active_users, _ = await monitor_service.get_live_monitoring_feed()
+    active_users, _ = await monitor_service.get_live_users_and_events(lab_id=lab_id, team_id=team_id)
     return active_users
 
 
 @router.get("/events", response_model=List[LiveEventItem])
 async def get_live_events(
+    event_type: Optional[str] = Query(None, alias="type"),
+    lab_id: Optional[UUID] = Query(None),
+    team_id: Optional[UUID] = Query(None),
     since: Optional[datetime] = Query(None, description="Retrieve events occurring after this ISO timestamp"),
     _admin=Depends(require_admin)
 ):
     """
     Returns chronological audit event records (solves, hints, attempts, completions).
     """
-    _, events = await monitor_service.get_live_monitoring_feed(since=since)
+    _, events = await monitor_service.get_live_users_and_events(
+        since=since, lab_id=lab_id, team_id=team_id, event_type=event_type
+    )
     return events
 
 

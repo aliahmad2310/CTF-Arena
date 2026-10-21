@@ -380,9 +380,7 @@ async def admin_create_user(
 
         # Create user via Supabase Auth Admin API
         user_attributes = {
-            # Supabase Auth still requires an email identifier. Use a reserved,
-            # non-deliverable username alias; users authenticate through /auth/login.
-            "email": f"{username}@users.ctf-arena.invalid",
+            "email": payload.email.strip().lower(),
             "password": payload.password,
             "email_confirm": True,
             "phone_confirm": True,
@@ -395,18 +393,24 @@ async def admin_create_user(
         new_user_id = str(res.user.id)
 
         # Upsert profile record with chosen role
-        supabase.table("profiles").upsert({
-            "id": new_user_id,
-            "username": username,
-            "display_name": payload.display_name or username,
-            "role": payload.role,
-            "team_id": str(payload.team_id) if payload.team_id else None
-        }).execute()
+        try:
+            supabase.table("profiles").upsert({
+                "id": new_user_id,
+                "username": username,
+                "display_name": payload.display_name or username,
+                "role": payload.role,
+                "team_id": str(payload.team_id) if payload.team_id else None
+            }).execute()
+        except Exception:
+            supabase.auth.admin.delete_user(new_user_id)
+            raise
 
         return MessageResponse(message=f"User '{username}' created successfully")
     except HTTPException:
         raise
     except Exception as exc:
+        if "already registered" in str(exc).lower() or "already exists" in str(exc).lower():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This email is already registered") from exc
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create user: {str(exc)}")
 
 
@@ -480,10 +484,7 @@ async def admin_delete_user(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Admins cannot delete their own account")
 
     try:
-        try:
-            supabase.auth.admin.delete_user(user_id)
-        except Exception:
-            pass
+        supabase.auth.admin.delete_user(user_id)
         supabase.table("profiles").delete().eq("id", user_id).execute()
         return MessageResponse(message="User account deleted successfully")
     except Exception as exc:

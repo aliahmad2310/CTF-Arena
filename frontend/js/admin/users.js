@@ -34,7 +34,11 @@ function initCreateUserBtn() {
         <form id="create-user-form" style="display: flex; flex-direction: column; gap: 1rem;">
           <div class="form-group">
             <label class="form-label" for="cu-username">Username</label>
-            <input type="text" id="cu-username" class="form-input form-input-mono" required minlength="3" maxlength="30" placeholder="handle">
+            <input type="text" id="cu-username" class="form-input form-input-mono" required minlength="3" maxlength="20" placeholder="handle">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cu-email">Email</label>
+            <input type="email" id="cu-email" class="form-input" required maxlength="254" autocomplete="email" placeholder="name@example.com">
           </div>
           <div class="form-group">
             <label class="form-label" for="cu-display-name">Display Name (Optional)</label>
@@ -64,19 +68,21 @@ function initCreateUserBtn() {
       confirmText: "Create Account",
       onConfirm: async () => {
         const username = document.getElementById("cu-username").value.trim();
+        const email = document.getElementById("cu-email").value.trim();
         const displayName = document.getElementById("cu-display-name").value.trim();
         const password = document.getElementById("cu-password").value;
         const role = document.getElementById("cu-role").value;
         const teamId = document.getElementById("cu-team").value;
 
-        if (!username || !password) {
-          showToast("Username and password are required", "error");
+        if (!username || !email || !password) {
+          showToast("Username, email, and password are required", "error");
           return false;
         }
 
         try {
           await api.post("/admin/users", {
             username,
+            email,
             display_name: displayName || username,
             password,
             role,

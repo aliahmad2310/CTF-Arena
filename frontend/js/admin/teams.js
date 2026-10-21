@@ -79,12 +79,18 @@ function initCreateTeamBtn() {
 async function loadTeams() {
   const tbody = document.getElementById("teams-tbody");
   try {
-    const teams = await api.get("/admin/teams");
+    const [teams, users] = await Promise.all([
+      api.get("/admin/teams"),
+      api.get("/admin/users")
+    ]);
+    cachedUsers = users.filter((user) => user.role === "user");
     renderTeams(teams);
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--status-red-text); padding: var(--space-6);">${escapeHtml(err.message)}</td></tr>`;
   }
 }
+
+let cachedUsers = [];
 
 function renderTeams(teams) {
   const tbody = document.getElementById("teams-tbody");
@@ -115,7 +121,7 @@ function renderTeams(teams) {
           <div class="text-xs" style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.5rem;">
             ${(t.members || []).map((member) => `<span class="badge badge-grey">${escapeHtml(member.username)} <button type="button" class="remove-member-btn" aria-label="Remove ${escapeHtml(member.username)} from ${escapeHtml(t.name)}" data-team-id="${t.id}" data-user-id="${member.id}" data-username="${escapeHtml(member.username)}" style="border:0;background:transparent;color:inherit;cursor:pointer;">Remove</button></span>`).join("") || `<span class="text-dim">No members</span>`}
           </div>
-          <button type="button" class="btn btn-xs btn-outline add-member-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}">Add member</button>
+          <button type="button" class="btn btn-xs btn-outline add-member-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}">Add account</button>
           <div class="text-dim text-xs" style="margin-top:0.5rem;">Capacity: ${(t.members || []).length} / ${t.max_members || 4}</div>
           <div style="display:flex;gap:0.35rem;align-items:center;margin-top:0.35rem;">
             <label class="text-xs text-dim" for="team-capacity-${t.id}">Max:</label>
@@ -146,13 +152,17 @@ function renderTeams(teams) {
         title: `Add member to ${teamName}`,
         contentHtml: `
           <div class="form-group">
-            <label class="form-label" for="member-username">Username</label>
-            <input type="text" id="member-username" class="form-input form-input-mono" required minlength="3" maxlength="30" autocomplete="off">
+            <label class="form-label" for="member-username">Account</label>
+            <select id="member-username" class="form-input form-select" required>
+              <option value="">Choose an account</option>
+              ${cachedUsers.filter((user) => !user.team_id).map((user) => `<option value="${escapeHtml(user.username)}">${escapeHtml(user.username)} (${escapeHtml(user.display_name)})</option>`).join("")}
+            </select>
+            <div class="form-helper">Only accounts that are not already on a team are available.</div>
           </div>
         `,
         confirmText: "Add Member",
         onConfirm: async () => {
-          const username = document.getElementById("member-username").value.trim();
+          const username = document.getElementById("member-username").value;
           if (!username) {
             showToast("Username is required", "error");
             return false;

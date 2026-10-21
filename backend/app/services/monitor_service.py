@@ -120,7 +120,12 @@ async def get_monitor_overview() -> MonitorOverviewStats:
     )
 
 
-async def get_live_users_and_events(since: Optional[datetime] = None) -> tuple[List[LiveActiveUserItem], List[LiveEventItem]]:
+async def get_live_users_and_events(
+    since: Optional[datetime] = None,
+    lab_id: Optional[UUID] = None,
+    team_id: Optional[UUID] = None,
+    event_type: Optional[str] = None,
+) -> tuple[List[LiveActiveUserItem], List[LiveEventItem]]:
     """
     Gathers real-time online competitor grid and latest event stream for admin/live.html.
     """
@@ -129,19 +134,20 @@ async def get_live_users_and_events(since: Optional[datetime] = None) -> tuple[L
     active_delta = timedelta(minutes=settings.ACTIVE_WINDOW_MINUTES)
 
     # Query active users
-    users_res = supabase.table("profiles").select(
+    users_query = supabase.table("profiles").select(
         "id, username, display_name, current_room_id, current_challenge_id, last_seen_at, teams(name), rooms(title), challenges(title)"
-    ).gte("last_seen_at", (now - active_delta).isoformat()).order("last_seen_at", desc=True).execute()
+    ).eq("role", "user").gte("last_seen_at", (now - active_delta).isoformat())
+    if lab_id:
+        users_query = users_query.eq("current_room_id", str(lab_id))
+    if team_id:
+        users_query = users_query.eq("team_id", str(team_id))
+    users_res = users_query.order("last_seen_at", desc=True).execute()
 
     active_user_items: List[LiveActiveUserItem] = []
     for u in (users_res.data or []):
         room_title = (u.get("rooms") or {}).get("title")
         challenge_title = (u.get("challenges") or {}).get("title")
         team_name = (u.get("teams") or {}).get("name")
-
-        # Get latest event for this user
-        ev_res = supabase.table("activity_events").select("event_type").eq("user_id", u["id"]).order("created_at", desc=True).limit(1).execute()
-        last_ev = ev_res.data[0].get("event_type") if ev_res.data else "active"
 
         active_user_items.append(LiveActiveUserItem(
             user_id=u["id"],
@@ -153,15 +159,21 @@ async def get_live_users_and_events(since: Optional[datetime] = None) -> tuple[L
             current_challenge_id=u.get("current_challenge_id"),
             current_challenge_title=challenge_title,
             last_seen_at=u["last_seen_at"],
-            last_event_type=last_ev
+            last_event_type=None
         ))
 
     # Query live activity feed
     events_query = supabase.table("admin_live_activity").select("*").limit(50)
     if since:
         events_query = events_query.gt("created_at", since.isoformat())
+    if lab_id:
+        events_query = events_query.eq("room_id", str(lab_id))
+    if team_id:
+        events_query = events_query.eq("team_id", str(team_id))
+    if event_type:
+        events_query = events_query.eq("event_type", event_type)
 
-    events_res = events_query.execute()
+    events_res = events_query.order("created_at", desc=True).execute()
     event_items = [
         LiveEventItem(
             event_id=e["event_id"],

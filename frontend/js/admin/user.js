@@ -33,8 +33,6 @@ async function loadUserAuditData() {
     const data = await api.get(`/admin/monitor/users/${userId}`);
     renderHeaderAndMetrics(data);
     renderLabCards(data.labs || []);
-    renderRemainingPanel(data.labs || []);
-    renderActivityFeed(data.recent_activity || []);
   } catch (err) {
     showToast(err.message || "Failed to load competitor audit", "error");
   }

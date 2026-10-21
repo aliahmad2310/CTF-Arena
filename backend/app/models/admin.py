@@ -101,7 +101,8 @@ class AdminUserBanRequest(BaseModel):
 
 class AdminUserCreateRequest(BaseModel):
     password: str = Field(..., min_length=6, max_length=128)
-    username: str = Field(..., min_length=3, max_length=30, pattern=r"^[a-zA-Z0-9_-]+$")
+    username: str = Field(..., min_length=3, max_length=20, pattern=r"^[a-zA-Z0-9_-]+$")
+    email: str = Field(..., min_length=5, max_length=254, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
     display_name: Optional[str] = Field(None, max_length=50)
     role: str = Field("user", pattern=r"^(user|admin)$")
     team_id: Optional[UUID] = None

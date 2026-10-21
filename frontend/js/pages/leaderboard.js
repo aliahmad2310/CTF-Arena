@@ -94,8 +94,13 @@ async function refreshLeaderboard(background = false) {
     if (activeTab === "teams") {
       const response = await api.get("/leaderboard/teams", { page: 1, page_size: PAGE_SIZE, q: query });
       if (isAdmin) {
-        const details = await api.get("/admin/monitor/teams", { page: 1, page_size: PAGE_SIZE });
-        renderAdminTeams(response.entries || [], details.teams || []);
+        try {
+          const details = await api.get("/admin/monitor/teams", { page: 1, page_size: PAGE_SIZE });
+          renderAdminTeams(response.entries || [], details.teams || []);
+        } catch (error) {
+          console.warn("Admin team progress is unavailable; displaying scoreboard standings only.", error);
+          renderAdminTeams(response.entries || [], []);
+        }
       } else {
         renderTeams(response.entries || []);
       }
