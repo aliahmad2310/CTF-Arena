@@ -514,3 +514,58 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ------------------------------------------------------------------------------
+   10. Unified Modal Dialogs (matches Championship Editor style)
+   ------------------------------------------------------------------------------ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(2, 7, 18, 0.78);
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-dialog {
+  width: min(100%, 520px);
+  max-height: min(90vh, 760px);
+  overflow-y: auto;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--line-normal);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), var(--glow-sm);
+  position: relative;
+}
+
+.modal-dialog::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--blue-400) 50%, transparent 100%);
+  opacity: 0.8;
+}
+
+.modal-dialog .card-body {
+  padding: var(--space-6);
+}
+
+.modal-heading {
+  font-size: var(--text-lg);
+  font-family: var(--font-display);
+  color: #ffffff;
+  margin: 0 0 var(--space-4);
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  margin-top: var(--space-6);
+}

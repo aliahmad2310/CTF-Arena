@@ -1,4 +1,7 @@
+import logging
 from fastapi import HTTPException, status
+
+logger = logging.getLogger(__name__)
 
 
 def insert_team_compatible(supabase, team_data: dict):
@@ -10,18 +13,15 @@ def insert_team_compatible(supabase, team_data: dict):
         is_missing_capacity_column = "max_members" in error_text and (
             "pgrst204" in error_text
             or "schema cache" in error_text
-            or "column" in error_text and "not find" in error_text
+            or ("column" in error_text and "not find" in error_text)
+            or ("column" in error_text and "does not exist" in error_text)
         )
         if not is_missing_capacity_column:
             raise
 
-        requested_capacity = int(team_data.get("max_members", 4))
-        if requested_capacity != 4:
-            raise RuntimeError(
-                "This database has not been migrated for custom team capacity. "
-                "Apply supabase/migrations/20261021_add_team_max_members.sql and reload the PostgREST schema cache."
-            ) from exc
-
+        logger.warning(
+            "Database schema missing max_members column on teams table; falling back to standard insertion."
+        )
         legacy_data = {key: value for key, value in team_data.items() if key != "max_members"}
         return supabase.table("teams").insert(legacy_data).execute()
 

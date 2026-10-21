@@ -107,15 +107,18 @@ def test_team_insert_retries_without_max_members_only_for_schema_cache_error():
     assert result.data[0]["id"] == "new-team"
 
 
-def test_team_insert_requires_migration_for_non_default_capacity():
+def test_team_insert_succeeds_even_for_non_default_capacity_on_legacy_schema():
     supabase = FakeInsertSupabase()
-    with pytest.raises(RuntimeError, match="Apply supabase/migrations/20261021_add_team_max_members.sql"):
-        insert_team_compatible(supabase, {
-            "name": "Large Team",
-            "invite_code": "INV-12345678",
-            "captain_id": None,
-            "max_members": 6,
-        })
+    result = insert_team_compatible(supabase, {
+        "name": "Large Team",
+        "invite_code": "INV-12345678",
+        "captain_id": None,
+        "max_members": 6,
+    })
+    assert len(supabase.inserted) == 2
+    assert supabase.inserted[0]["max_members"] == 6
+    assert "max_members" not in supabase.inserted[1]
+    assert result.data[0]["id"] == "new-team"
 
 
 @pytest.mark.asyncio

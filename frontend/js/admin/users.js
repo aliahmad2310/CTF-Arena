@@ -147,10 +147,16 @@ async function loadUsers() {
 }
 
 function renderPagination(total) {
+  const totalCountEl = document.getElementById("users-total-count");
+  if (totalCountEl) {
+    totalCountEl.textContent = `${total} accounts`;
+  }
+
   const info = document.getElementById("users-page-info");
-  const start = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const end = Math.min(currentPage * PAGE_SIZE, total);
-  if (info) info.textContent = `Page ${currentPage} of ${totalPages} | ${start}-${end} of ${total} accounts`;
+  if (info) {
+    info.textContent = `Page ${currentPage} of ${totalPages}`;
+  }
+
   const prev = document.getElementById("users-prev");
   const next = document.getElementById("users-next");
   if (prev) prev.disabled = currentPage <= 1;

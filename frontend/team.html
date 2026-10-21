@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Team Hub - CTF Arena</title>
-  <meta name="description" content="Manage your CTF team, view team roster, generate invite codes, or join an existing squad.">
+  <meta name="description" content="View your squad standings, solves, and members on CTF Arena.">
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <link rel="stylesheet" href="/css/variables.css">
   <link rel="stylesheet" href="/css/base.css">
@@ -19,132 +19,55 @@
 
   <main class="site-main container">
     <!-- State A: Not In A Team Panel (hidden by default) -->
-    <div id="no-team-view" class="hidden" style="max-width: 600px; margin: 0 auto;">
-      <div style="text-align: center; margin-bottom: var(--space-6);">
-        <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-2);">Squad Formation</h1>
-        <p class="text-dim">Create or join a team to share challenge progress and climb the team scoreboard.</p>
-      </div>
-
+    <div id="no-team-view" class="hidden" style="max-width: 540px; margin: var(--space-12) auto; text-align: center;">
       <div class="card">
-        <div class="card-header" style="padding: 0; background-color: var(--bg-surface); display: flex;">
-          <button type="button" id="tab-btn-create" class="btn" style="flex: 1; border-radius: 0; background: var(--bg-card); color: var(--accent-green); border-bottom: 2px solid var(--accent-green);">
-            Create New Team
-          </button>
-          <button type="button" id="tab-btn-join" class="btn" style="flex: 1; border-radius: 0; background: var(--bg-surface); color: var(--text-muted); border-bottom: 2px solid transparent;">
-            Join With Invite Code
-          </button>
-        </div>
-
-        <div class="card-body">
-          <!-- Create Team Form -->
-          <form id="create-team-form">
-            <div class="form-group">
-              <label class="form-label" for="create-team-name">Team Name</label>
-              <input type="text" id="create-team-name" class="form-input form-input-mono" placeholder="CyberPhantoms" required minlength="3" maxlength="30">
-              <div class="form-helper">3 to 30 characters. Choose a unique name.</div>
-            </div>
-
-            <button type="submit" id="create-team-btn" class="btn btn-primary" style="width: 100%; margin-top: var(--space-2);">
-              Form Team
-            </button>
-          </form>
-
-          <!-- Join Team Form (hidden by default) -->
-          <form id="join-team-form" class="hidden">
-            <div class="form-group">
-              <label class="form-label" for="join-invite-code">Secret Invite Code</label>
-              <input type="text" id="join-invite-code" class="form-input form-input-mono" placeholder="INV-ABCD1234" required minlength="6" maxlength="32">
-              <div class="form-helper">Provided by your team captain.</div>
-            </div>
-
-            <button type="submit" id="join-team-btn" class="btn btn-primary" style="width: 100%; margin-top: var(--space-2);">
-              Join Existing Team
-            </button>
-          </form>
+        <div class="card-body" style="padding: var(--space-8);">
+          <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-2);">Squad Roster</h1>
+          <p class="text-dim" style="margin: 0;">Your account has not been assigned to a squad yet. Please contact your competition administrator.</p>
         </div>
       </div>
     </div>
 
     <!-- State B: Active Team Hub Panel (hidden by default) -->
     <div id="active-team-view" class="hidden">
-      <!-- Team Header Overview -->
+      <!-- Team Header Overview: Name, Position (Rank), and Points -->
       <div class="card" style="margin-bottom: var(--space-6);">
         <div class="card-body" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4);">
           <div>
-            <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-1);">
-              <h1 id="team-name" style="font-size: var(--text-2xl); margin: 0;">--</h1>
-              <span id="capacity-badge" class="badge badge-grey">0 / 4 Members</span>
-            </div>
-            <p class="text-dim" style="font-size: var(--text-xs); margin: 0;">
-              Formed on <span id="team-created-at">--</span>
-            </p>
+            <h1 id="team-name" style="font-size: var(--text-2xl); margin: 0 0 var(--space-1);">--</h1>
+            <div class="text-dim text-xs text-mono" id="team-member-count">0 members</div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: var(--space-6);">
+          <div style="display: flex; align-items: center; gap: var(--space-8);">
             <div>
-              <div class="text-dim" style="font-size: var(--text-xs); font-family: var(--font-mono);">TEAM SCORE</div>
-              <div id="team-score" class="text-green text-mono" style="font-size: var(--text-2xl); font-weight: 700;">0</div>
-            </div>
-            <div>
-              <div class="text-dim" style="font-size: var(--text-xs); font-family: var(--font-mono);">TEAM RANK</div>
+              <div class="text-dim text-xs text-mono">TEAM RANK</div>
               <div id="team-rank" class="text-cyan text-mono" style="font-size: var(--text-2xl); font-weight: 700;">--</div>
             </div>
-          </div>
-        </div>
-
-        <!-- Invite Code Ribbon (Members Only) -->
-        <div class="card-footer" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); background-color: rgba(0, 240, 255, 0.03); border-top: 1px solid var(--border-subtle);">
-          <div style="display: flex; align-items: center; gap: var(--space-3);">
-            <span class="text-dim text-mono" style="font-size: var(--text-xs);">RECRUITMENT CODE:</span>
-            <code id="team-invite-code" class="text-mono text-cyan" style="font-size: var(--text-sm); font-weight: 700;">INV-XXXXXXXX</code>
-            <button type="button" id="copy-invite-btn" class="btn btn-sm btn-secondary" title="Copy code">
-              Copy Code
-            </button>
-          </div>
-
-          <!-- Captain Controls -->
-          <div id="captain-controls" class="hidden" style="display: flex; align-items: center; gap: var(--space-2);">
-            <button type="button" id="regen-code-btn" class="btn btn-sm btn-secondary">
-              Rotate Code
-            </button>
-            <button type="button" id="rename-team-btn" class="btn btn-sm btn-secondary">
-              Rename Team
-            </button>
-            <button type="button" id="disband-team-btn" class="btn btn-sm btn-danger">
-              Disband Team
-            </button>
-          </div>
-
-          <!-- Member Leave Control -->
-          <div id="member-controls" class="hidden">
-            <button type="button" id="leave-team-btn" class="btn btn-sm btn-danger">
-              Leave Team
-            </button>
+            <div>
+              <div class="text-dim text-xs text-mono">TEAM POINTS</div>
+              <div id="team-score" class="text-green text-mono" style="font-size: var(--text-2xl); font-weight: 700;">0</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Team Roster Section -->
+      <!-- Team Members Roster: Members, Labs Solved, Points of individual person -->
       <div class="card">
         <div class="card-header">
-          <h2 style="font-size: var(--text-base); margin: 0;">Squad Operatives</h2>
-          <span class="badge badge-green">Roster</span>
+          <h2 style="font-size: var(--text-base); margin: 0;">Squad Members</h2>
         </div>
         <div class="table-container" style="border: none; border-radius: 0;">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Operative</th>
-                <th>Role</th>
-                <th>Solves</th>
-                <th>Points Contributed</th>
-                <th>Last Active</th>
-                <th id="th-actions" style="text-align: right;">Action</th>
+                <th>Member</th>
+                <th>Labs Solved</th>
+                <th style="text-align: right;">Points</th>
               </tr>
             </thead>
             <tbody id="roster-tbody">
               <tr>
-                <td colspan="6" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
+                <td colspan="3" style="text-align: center; color: var(--text-dim); padding: var(--space-6);">
                   Loading roster...
                 </td>
               </tr>

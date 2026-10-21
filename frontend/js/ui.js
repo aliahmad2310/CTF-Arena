@@ -68,40 +68,38 @@ export function showToast(message, type = "info", durationMs = 4000) {
  * @param {string} [options.cancelText]
  * @param {Function} [options.onConfirm]
  */
-export function showModal({ title, contentHtml, confirmText = "Confirm", cancelText = "Cancel", onConfirm }) {
+export function showModal({ title, contentHtml, confirmText = "Confirm", cancelText = "Cancel", onConfirm, isDanger = false }) {
   closeModal();
 
   const backdrop = document.createElement("div");
   backdrop.id = "active-modal-backdrop";
   backdrop.className = "modal-backdrop";
 
+  const isDestructive = isDanger || /delete|disband|purge|suspend|ban/i.test(confirmText);
+  const confirmBtnClass = isDestructive ? "btn btn-danger" : "btn btn-primary";
+
   backdrop.innerHTML = `
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div class="card-header">
-        <h3 id="modal-title" style="margin:0; font-size:var(--text-base);">${escapeHtml(title)}</h3>
-        <button type="button" id="modal-close-btn" class="btn btn-sm btn-secondary" style="border:none; background:transparent;" aria-label="Close modal">
-          ${Icons.cross(16)}
-        </button>
-      </div>
+    <div class="card modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-heading">
       <div class="card-body">
-        ${contentHtml}
-      </div>
-      <div class="card-footer" style="display:flex; justify-content:flex-end; gap:0.5rem;">
-        <button type="button" id="modal-cancel-btn" class="btn btn-secondary">${escapeHtml(cancelText)}</button>
-        ${onConfirm ? `<button type="button" id="modal-confirm-btn" class="btn btn-primary">${escapeHtml(confirmText)}</button>` : ""}
+        <h2 id="modal-heading" class="modal-heading">${escapeHtml(title)}</h2>
+        <div class="modal-content-body">
+          ${contentHtml}
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="modal-cancel-btn" class="btn btn-secondary">${escapeHtml(cancelText)}</button>
+          ${onConfirm ? `<button type="button" id="modal-confirm-btn" class="${confirmBtnClass}">${escapeHtml(confirmText)}</button>` : ""}
+        </div>
       </div>
     </div>
   `;
 
   document.body.appendChild(backdrop);
 
-  const closeBtn = backdrop.querySelector("#modal-close-btn");
   const cancelBtn = backdrop.querySelector("#modal-cancel-btn");
   const confirmBtn = backdrop.querySelector("#modal-confirm-btn");
 
   const close = () => closeModal();
-  closeBtn.addEventListener("click", close);
-  cancelBtn.addEventListener("click", close);
+  cancelBtn?.addEventListener("click", close);
 
   if (confirmBtn && onConfirm) {
     confirmBtn.addEventListener("click", async () => {
@@ -109,6 +107,7 @@ export function showModal({ title, contentHtml, confirmText = "Confirm", cancelT
       if (form && !form.reportValidity()) return;
 
       confirmBtn.disabled = true;
+      const originalText = confirmBtn.textContent;
       confirmBtn.textContent = "Processing...";
       try {
         const shouldClose = await onConfirm();
@@ -118,13 +117,21 @@ export function showModal({ title, contentHtml, confirmText = "Confirm", cancelT
         }
 
         confirmBtn.disabled = false;
-        confirmBtn.textContent = confirmText;
+        confirmBtn.textContent = originalText;
       } catch (err) {
         confirmBtn.disabled = false;
-        confirmBtn.textContent = confirmText;
+        confirmBtn.textContent = originalText;
         showToast(err.message || "Action failed", "error");
       }
     });
+
+    const form = backdrop.querySelector("form");
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        confirmBtn.click();
+      });
+    }
   }
 
   backdrop.addEventListener("click", (e) => {

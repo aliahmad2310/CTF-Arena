@@ -7,17 +7,12 @@
 import { requireAdmin } from "../auth.js";
 import { initLayout } from "../layout.js";
 import { api } from "../api.js";
-import { showToast, showModal, closeModal } from "../ui.js";
+import { showToast, showModal } from "../ui.js";
 import { escapeHtml } from "../utils.js";
-
-if (window.location.pathname === "/admin/labs.html" && !window.location.search.includes("manage=1")) {
-  window.location.replace("/admin");
-}
 
 let labsList = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  if (window.location.pathname === "/admin/labs.html" && !window.location.search.includes("manage=1")) return;
   try {
     await requireAdmin();
   } catch {
@@ -25,7 +20,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   await initLayout();
-
   await loadLabs();
   initCreateButton();
 });
@@ -55,7 +49,7 @@ function renderLabs(labs) {
     else if (lab.difficulty === "Medium") diffBadge = "badge-amber";
     else diffBadge = "badge-red";
 
-    const tagsStr = (lab.tags || []).map(t => `#${escapeHtml(t)}`).join(", ");
+    const tagsStr = (lab.tags || []).map((t) => `#${escapeHtml(t)}`).join(", ");
 
     html += `
       <tr>
@@ -89,7 +83,7 @@ function renderLabs(labs) {
   tbody.querySelectorAll(".edit-lab-btn").forEach((btn) => {
     btn.onclick = () => {
       const labId = btn.getAttribute("data-id");
-      const lab = labsList.find(l => l.id === labId);
+      const lab = labsList.find((l) => l.id === labId);
       if (lab) openEditModal(lab);
     };
   });
@@ -101,7 +95,7 @@ function renderLabs(labs) {
       const labTitle = btn.getAttribute("data-title");
       showModal({
         title: "Delete Lab",
-        contentHtml: `<p style="color:var(--status-red-text); font-weight:600;">Permanently delete lab "${labTitle}" and all associated challenges and flags? This cannot be undone.</p>`,
+        contentHtml: `<p style="color:var(--status-red-text); font-weight:600;">Permanently delete lab "${labTitle}" and all associated challenges and files? This cannot be undone.</p>`,
         confirmText: "Permanently Delete",
         onConfirm: async () => {
           await api.delete(`/admin/rooms/${labId}`);
@@ -115,11 +109,13 @@ function renderLabs(labs) {
 
 function initCreateButton() {
   const btn = document.getElementById("create-lab-btn");
+  if (!btn) return;
+
   btn.onclick = () => {
     showModal({
       title: "Create New Lab",
       contentHtml: `
-        <form id="create-lab-modal-form">
+        <form id="create-lab-modal-form" style="display: flex; flex-direction: column; gap: 1rem;">
           <div class="form-group">
             <label class="form-label" for="ml-title">Title</label>
             <input type="text" id="ml-title" class="form-input" required minlength="3" maxlength="100" placeholder="Active Directory Exploitation">
@@ -127,6 +123,7 @@ function initCreateButton() {
           <div class="form-group">
             <label class="form-label" for="ml-slug">Slug (URL friendly)</label>
             <input type="text" id="ml-slug" class="form-input form-input-mono" required pattern="^[a-z0-9-]+$" placeholder="active-directory-exploitation">
+            <div class="form-helper">Unique URL identifier consisting of lowercase letters, numbers, and hyphens.</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="ml-difficulty">Difficulty</label>
@@ -138,18 +135,23 @@ function initCreateButton() {
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" for="ml-tags">Tags (comma separated)</label>
-            <input type="text" id="ml-tags" class="form-input form-input-mono" placeholder="ad, kerberos, ldap">
-          </div>
-          <div class="form-group">
             <label class="form-label" for="ml-desc">Description</label>
             <textarea id="ml-desc" class="form-textarea" rows="3" placeholder="Overview of the attack vectors simulated in this lab..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ml-file">File Attachment / Lab Media (Optional)</label>
+            <input type="file" id="ml-file" class="form-input" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.zip">
+            <div class="form-helper">Upload a lab diagram, image, PDF guide, or non-executable archive (max 10MB). Script execution is blocked.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ml-tags">Tags (comma separated)</label>
+            <input type="text" id="ml-tags" class="form-input form-input-mono" placeholder="ad, kerberos, ldap">
           </div>
           <div class="form-group">
             <label class="form-label" for="ml-order">Display Order</label>
             <input type="number" id="ml-order" class="form-input form-input-mono" value="1">
           </div>
-          <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
             <input type="checkbox" id="ml-published" checked>
             <label for="ml-published" class="text-sm">Publish immediately (visible to competitors)</label>
           </div>
@@ -160,19 +162,58 @@ function initCreateButton() {
         const title = document.getElementById("ml-title").value.trim();
         const slug = document.getElementById("ml-slug").value.trim();
         const difficulty = document.getElementById("ml-difficulty").value;
-        const tags = document.getElementById("ml-tags").value.split(",").map(t => t.trim()).filter(Boolean);
+        const tags = document.getElementById("ml-tags").value.split(",").map((t) => t.trim()).filter(Boolean);
         const description = document.getElementById("ml-desc").value.trim();
         const display_order = parseInt(document.getElementById("ml-order").value, 10) || 0;
         const is_published = document.getElementById("ml-published").checked;
+        const fileInput = document.getElementById("ml-file");
 
-        await api.post("/admin/rooms", {
-          title, slug, difficulty, tags, description, display_order, is_published
-        });
+        let cover_image_url = null;
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+          const file = fileInput.files[0];
+          const formData = new FormData();
+          formData.append("file", file);
+          try {
+            const uploadRes = await api.post("/admin/rooms/upload", formData);
+            cover_image_url = uploadRes.file_url;
+          } catch (uploadErr) {
+            showToast(uploadErr.message || "File upload failed", "error");
+            return false;
+          }
+        }
 
-        showToast(`Lab '${title}' created successfully`, "success");
-        await loadLabs();
-      }
+        try {
+          await api.post("/admin/rooms", {
+            title,
+            slug,
+            difficulty,
+            tags,
+            description,
+            display_order,
+            is_published,
+            cover_image_url,
+          });
+          showToast(`Lab '${title}' created successfully`, "success");
+          await loadLabs();
+          return true;
+        } catch (err) {
+          showToast(err.message || "Failed to create lab", "error");
+          return false;
+        }
+      },
     });
+
+    // Auto slug generator from title
+    const titleEl = document.getElementById("ml-title");
+    const slugEl = document.getElementById("ml-slug");
+    if (titleEl && slugEl) {
+      titleEl.addEventListener("input", () => {
+        slugEl.value = titleEl.value
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+      });
+    }
   };
 }
 
@@ -180,7 +221,7 @@ function openEditModal(lab) {
   showModal({
     title: `Edit Lab: ${lab.title}`,
     contentHtml: `
-      <form id="edit-lab-modal-form">
+      <form id="edit-lab-modal-form" style="display: flex; flex-direction: column; gap: 1rem;">
         <div class="form-group">
           <label class="form-label" for="el-title">Title</label>
           <input type="text" id="el-title" class="form-input" value="${escapeHtml(lab.title)}" required minlength="3" maxlength="100">
@@ -199,12 +240,22 @@ function openEditModal(lab) {
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label" for="el-tags">Tags (comma separated)</label>
-          <input type="text" id="el-tags" class="form-input form-input-mono" value="${escapeHtml((lab.tags || []).join(", "))}">
-        </div>
-        <div class="form-group">
           <label class="form-label" for="el-desc">Description</label>
           <textarea id="el-desc" class="form-textarea" rows="3">${escapeHtml(lab.description || "")}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="el-file">File Attachment / Lab Media (Optional)</label>
+          ${lab.cover_image_url ? `
+            <div class="text-xs text-dim" style="margin-bottom:0.25rem;">
+              Current attachment: <a href="${escapeHtml(lab.cover_image_url)}" target="_blank" rel="noopener noreferrer" class="text-cyan">View file</a>
+            </div>
+          ` : ""}
+          <input type="file" id="el-file" class="form-input" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.zip">
+          <div class="form-helper">Upload a replacement image, PDF guide, or non-executable archive (max 10MB). Script execution is blocked.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="el-tags">Tags (comma separated)</label>
+          <input type="text" id="el-tags" class="form-input form-input-mono" value="${escapeHtml((lab.tags || []).join(", "))}">
         </div>
         <div class="form-group">
           <label class="form-label" for="el-order">Display Order</label>
@@ -217,16 +268,42 @@ function openEditModal(lab) {
       const title = document.getElementById("el-title").value.trim();
       const slug = document.getElementById("el-slug").value.trim();
       const difficulty = document.getElementById("el-difficulty").value;
-      const tags = document.getElementById("el-tags").value.split(",").map(t => t.trim()).filter(Boolean);
+      const tags = document.getElementById("el-tags").value.split(",").map((t) => t.trim()).filter(Boolean);
       const description = document.getElementById("el-desc").value.trim();
       const display_order = parseInt(document.getElementById("el-order").value, 10) || 0;
+      const fileInput = document.getElementById("el-file");
 
-      await api.patch(`/admin/rooms/${lab.id}`, {
-        title, slug, difficulty, tags, description, display_order
-      });
+      let cover_image_url = lab.cover_image_url;
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          const uploadRes = await api.post("/admin/rooms/upload", formData);
+          cover_image_url = uploadRes.file_url;
+        } catch (uploadErr) {
+          showToast(uploadErr.message || "File upload failed", "error");
+          return false;
+        }
+      }
 
-      showToast("Lab details updated", "success");
-      await loadLabs();
-    }
+      try {
+        await api.patch(`/admin/rooms/${lab.id}`, {
+          title,
+          slug,
+          difficulty,
+          tags,
+          description,
+          display_order,
+          cover_image_url,
+        });
+        showToast("Lab details updated", "success");
+        await loadLabs();
+        return true;
+      } catch (err) {
+        showToast(err.message || "Failed to update lab", "error");
+        return false;
+      }
+    },
   });
 }

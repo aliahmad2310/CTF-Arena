@@ -71,12 +71,11 @@ function renderNavbar(profile) {
         </a>
 
         <ul class="navbar-nav">
-          <li><a href="${isAdmin ? "/admin/labs.html?manage=1" : "/labs.html"}" class="nav-link ${currentPath.includes("/labs.html") || currentPath.includes("/lab.html") ? "active" : ""}">Labs</a></li>
+          <li><a href="${isAdmin ? "/admin/labs.html" : "/labs.html"}" class="nav-link ${currentPath.includes("/labs.html") || currentPath.includes("/lab.html") ? "active" : ""}">Labs</a></li>
           <li><a href="/leaderboard.html" class="nav-link ${currentPath.includes("/leaderboard.html") ? "active" : ""}">Leaderboard</a></li>
           ${isAdmin ? `<li><a href="/admin/users.html" class="nav-link ${currentPath.includes("/admin/users.html") || currentPath.includes("/admin/teams.html") ? "active" : ""}">Accounts</a></li>` : ""}
           ${isAuth && !isAdmin ? `
             <li><a href="/team.html" class="nav-link ${currentPath.includes("/team.html") ? "active" : ""}">Team</a></li>
-            <li><a href="/" class="nav-link ${currentPath === "/" || currentPath === "/index.html" ? "active" : ""}">Dashboard</a></li>
           ` : ""}
         </ul>
 

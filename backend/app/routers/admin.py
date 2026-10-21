@@ -129,6 +129,45 @@ async def delete_room(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Delete failed: {str(exc)}")
 
 
+@router.post("/rooms/upload", status_code=status.HTTP_201_CREATED)
+async def upload_room_attachment(
+    file: UploadFile = File(...),
+    admin: Dict[str, Any] = Depends(require_admin),
+):
+    """Store an allowlisted non-executable file attachment for a lab room."""
+    import uuid
+
+    try:
+        filename = _safe_attachment_name(file.filename or "attachment")
+        extension = _validate_attachment(filename, file.content_type)
+        if extension in {".exe", ".sh", ".bat", ".cmd", ".ps1", ".php", ".py", ".cgi", ".pl", ".dll", ".so", ".vbs", ".js", ".html", ".htm"}:
+            raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Executable files are forbidden")
+
+        content = await file.read(MAX_CHALLENGE_FILE_BYTES + 1)
+        if not content:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File is empty")
+        if len(content) > MAX_CHALLENGE_FILE_BYTES:
+            raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File exceeds the 10 MiB limit")
+    finally:
+        await file.close()
+
+    supabase = get_supabase_client()
+    storage_path = f"labs/{uuid.uuid4().hex}{extension}"
+    safe_content_type = "application/octet-stream" if extension in {".zip", ".txt", ".pdf"} else file.content_type
+    try:
+        supabase.storage.from_("challenge-files").upload(
+            storage_path,
+            content,
+            {"content-type": safe_content_type, "cache-control": "3600", "upsert": "false"},
+        )
+        file_url = supabase.storage.from_("challenge-files").get_public_url(storage_path)
+    except Exception as exc:
+        logger.warning("Supabase storage upload failed: %s", exc)
+        file_url = f"/assets/labs/{storage_path}"
+
+    return {"file_url": file_url, "file_name": filename, "file_path": storage_path}
+
+
 # ==============================================================================
 # 2. Challenges Management
 # ==============================================================================
