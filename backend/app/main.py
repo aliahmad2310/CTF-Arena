@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.db.client import get_supabase_client
 from app.models.common import HealthResponse, CtfStatusResponse
-from app.routers import auth, teams, rooms, challenges, hints, leaderboard, dashboard, admin, admin_monitor
+from app.routers import auth, teams, rooms, challenges, hints, leaderboard, dashboard, admin, admin_monitor, site_content
 
 # Setup structured logging
 logging.basicConfig(
@@ -63,6 +63,7 @@ app.include_router(leaderboard.router)
 app.include_router(dashboard.router)
 app.include_router(admin.router)
 app.include_router(admin_monitor.router)
+app.include_router(site_content.router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])

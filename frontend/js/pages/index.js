@@ -9,12 +9,30 @@ import { initLayout } from "../layout.js";
 import { getUserProfile } from "../auth.js";
 import { escapeHtml } from "../utils.js";
 import { requireAdmin } from "../auth.js";
-import { showToast } from "../ui.js";
+import { showModal, showToast } from "../ui.js";
 import { supabase } from "../supabaseClient.js";
 import { Icons } from "../icons.js";
 
 let countdownInterval = null;
 let isAdminRoute = false;
+let isHomepageEditMode = false;
+
+const homepageEditableFields = {
+  hero_heading: { label: "Homepage heading", maxLength: 200 },
+  hero_description: { label: "Homepage introduction", maxLength: 1000 },
+  enter_labs_button: { label: "Enter Labs button text", maxLength: 80 },
+  scoreboard_button: { label: "Scoreboard button text", maxLength: 80 },
+  leaderboard_title: { label: "Leaderboard preview heading", maxLength: 120 },
+  leaderboard_view_link: { label: "Leaderboard link text", maxLength: 80 },
+  features_heading: { label: "Features heading", maxLength: 120 },
+  features_description: { label: "Features introduction", maxLength: 500 },
+  feature_labs_title: { label: "Interactive Labs heading", maxLength: 120 },
+  feature_labs_description: { label: "Interactive Labs description", maxLength: 500 },
+  feature_team_title: { label: "Squad Collaboration heading", maxLength: 120 },
+  feature_team_description: { label: "Squad Collaboration description", maxLength: 500 },
+  feature_monitor_title: { label: "Administrative Monitor heading", maxLength: 120 },
+  feature_monitor_description: { label: "Administrative Monitor description", maxLength: 500 },
+};
 
 document.addEventListener("DOMContentLoaded", async () => {
   const profile = await getUserProfile();
@@ -47,6 +65,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!isAdminRoute) await initLayout();
 
+  await loadHomepageContent();
+
   await Promise.all([
     initCtfCountdown(),
     fetchTopTeamsPreview()
@@ -56,6 +76,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       await requireAdmin();
       bindChampionshipEditor();
+      bindHomepageEditMode();
     } catch {
       // Display remains public; only editing controls are withheld.
     }
@@ -63,6 +84,70 @@ document.addEventListener("DOMContentLoaded", async () => {
     await redirectAdminRouteToHome();
   }
 });
+
+async function loadHomepageContent() {
+  try {
+    const response = await api.get("/site-content");
+    Object.entries(response.content || {}).forEach(([key, value]) => {
+      const field = homepageEditableFields[key];
+      const element = document.querySelector(`[data-editable-key="${key}"]`);
+      if (field && element && typeof value === "string") element.textContent = value;
+    });
+  } catch (error) {
+    console.warn("Could not load saved homepage text; using the built-in copy.", error);
+  }
+}
+
+function bindHomepageEditMode() {
+  const toggle = document.getElementById("homepage-edit-mode-toggle");
+  if (!toggle) return;
+
+  toggle.addEventListener("click", () => {
+    isHomepageEditMode = !isHomepageEditMode;
+    document.body.classList.toggle("homepage-edit-mode", isHomepageEditMode);
+    toggle.setAttribute("aria-pressed", String(isHomepageEditMode));
+    toggle.textContent = isHomepageEditMode ? "Exit Edit Mode" : "Edit Mode";
+    showToast(isHomepageEditMode ? "Edit Mode enabled. Select homepage text to edit." : "Edit Mode disabled.", "info");
+  });
+
+  document.querySelectorAll("[data-editable-key]").forEach((element) => {
+    element.addEventListener("click", (event) => {
+      if (!isHomepageEditMode) return;
+      event.preventDefault();
+      event.stopPropagation();
+      void editHomepageText(element);
+    });
+  });
+}
+
+function editHomepageText(element) {
+  const key = element.dataset.editableKey;
+  const field = homepageEditableFields[key];
+  if (!field) return;
+
+  showModal({
+    title: `Edit ${field.label}`,
+    contentHtml: `
+      <form id="homepage-copy-form">
+        <label class="form-label" for="homepage-copy-input">${field.label}</label>
+        <textarea id="homepage-copy-input" class="form-input" rows="5" maxlength="${field.maxLength}" required>${escapeHtml(element.textContent.trim())}</textarea>
+      </form>
+    `,
+    confirmText: "Save Text",
+    onConfirm: async () => {
+      const input = document.getElementById("homepage-copy-input");
+      const value = input.value.trim();
+      if (!value) {
+        showToast("Homepage text cannot be empty.", "error");
+        return false;
+      }
+      const response = await api.patch("/admin/site-content", { [key]: value });
+      element.textContent = response.content?.[key] || value;
+      showToast(`${field.label} updated.`, "success");
+      return true;
+    }
+  });
+}
 
 supabase.auth.onAuthStateChange(async (_event, session) => {
   if (!isAdminRoute) return;

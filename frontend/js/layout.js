@@ -79,6 +79,9 @@ function renderNavbar(profile) {
         </ul>
 
         <div class="navbar-actions">
+          ${isAdmin && (currentPath === "/" || currentPath === "/index.html" || currentPath === "/admin" || currentPath === "/admin/") ? `
+            <button type="button" id="homepage-edit-mode-toggle" class="btn btn-sm btn-secondary" aria-pressed="false">Edit Mode</button>
+          ` : ""}
           ${isAuth ? `
             <div style="display:flex; align-items:center; gap:0.75rem;">
               <a href="${isAdmin ? "/admin/users.html" : `/profile.html?username=${encodeURIComponent(profile.username)}`}" class="btn btn-sm btn-secondary navbar-user-control" style="font-family:var(--font-mono);text-transform:none;letter-spacing:normal;">

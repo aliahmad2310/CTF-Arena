@@ -22,19 +22,19 @@
   <main class="site-main container">
     <!-- Hero Section -->
     <section style="text-align: center; padding: var(--space-12) 0 var(--space-8) 0; max-width: 840px; margin: 0 auto;">
-      <h1 style="font-size: var(--text-4xl); line-height: 1.15; margin-bottom: var(--space-4); letter-spacing: -0.03em;">
+      <h1 data-editable-key="hero_heading" style="font-size: var(--text-4xl); line-height: 1.15; margin-bottom: var(--space-4); letter-spacing: -0.03em;">
         Cyber Jirga Hacktoberfest 2026 CTF
       </h1>
 
-      <p class="text-muted" style="font-size: var(--text-lg); line-height: 1.6; margin-bottom: var(--space-8);">
+      <p data-editable-key="hero_description" class="text-muted" style="font-size: var(--text-lg); line-height: 1.6; margin-bottom: var(--space-8);">
         Engage with multi-stage vulnerable labs, exploit realistic targets, submit cryptographic flags, and compete with cybersecurity squads across the globe.
       </p>
 
       <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-4);">
-        <a href="/labs.html" id="enter-labs-btn" class="btn btn-lg btn-primary hidden">
+        <a href="/labs.html" id="enter-labs-btn" data-editable-key="enter_labs_button" class="btn btn-lg btn-primary hidden">
           Enter Active Labs
         </a>
-        <a href="/leaderboard.html" id="scoreboard-cta-btn" class="btn btn-lg btn-secondary">
+        <a href="/leaderboard.html" id="scoreboard-cta-btn" data-editable-key="scoreboard_button" class="btn btn-lg btn-secondary">
           View Live Scoreboard
         </a>
       </div>
@@ -89,8 +89,8 @@
     <!-- Top 5 Scoreboard Preview -->
     <section class="card" style="margin-bottom: var(--space-12);">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 style="font-size: var(--text-base); margin: 0;">Top Squads Leaderboard Preview</h2>
-        <a href="/leaderboard.html" class="text-cyan text-xs text-mono" style="font-weight: 600;">View Full Scoreboard &rarr;</a>
+        <h2 data-editable-key="leaderboard_title" style="font-size: var(--text-base); margin: 0;">Top Squads Leaderboard Preview</h2>
+        <a href="/leaderboard.html" data-editable-key="leaderboard_view_link" class="text-cyan text-xs text-mono" style="font-weight: 600;">View Full Scoreboard &rarr;</a>
       </div>
       <div class="table-container" style="border: none; border-radius: 0;">
         <table class="data-table">
@@ -117,30 +117,30 @@
     <!-- Platform Highlights Section -->
     <section style="margin-bottom: var(--space-12);">
       <div style="text-align: center; margin-bottom: var(--space-8);">
-        <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-2);">Built for Serious Cyber Operatives</h2>
-        <p class="text-dim">Engineered with modern defense-in-depth protocols and zero client-side flag disclosure.</p>
+        <h2 data-editable-key="features_heading" style="font-size: var(--text-2xl); margin-bottom: var(--space-2);">Built for Serious Cyber Operatives</h2>
+        <p data-editable-key="features_description" class="text-dim">Engineered with modern defense-in-depth protocols and zero client-side flag disclosure.</p>
       </div>
 
       <div class="grid-3">
         <div class="card">
           <div class="card-body">
-            <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Interactive Labs</h3>
-            <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin: 0;">
+            <h3 data-editable-key="feature_labs_title" style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Interactive Labs</h3>
+            <p data-editable-key="feature_labs_description" class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin: 0;">
               Modeled after TryHackMe rooms. Each lab contains progressive vulnerability stages with instant flag verification.
             </p>
           </div>
         </div>
 
         <div class="card-body card">
-          <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Squad Collaboration</h3>
-          <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin: 0;">
+          <h3 data-editable-key="feature_team_title" style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Squad Collaboration</h3>
+          <p data-editable-key="feature_team_description" class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin: 0;">
             Assemble squads of up to 4 operatives. Rotate recruitment invite codes and strategize across challenge categories.
           </p>
         </div>
 
         <div class="card-body card">
-          <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Live Administrative Monitor</h3>
-          <p class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin: 0;">
+          <h3 data-editable-key="feature_monitor_title" style="font-size: var(--text-lg); margin-bottom: var(--space-2); color: #ffffff;">Live Administrative Monitor</h3>
+          <p data-editable-key="feature_monitor_description" class="text-dim" style="font-size: var(--text-sm); line-height: 1.6; margin: 0;">
             Comprehensive telemetry console with real-time heartbeat tracking, stuck user heuristics, and matrix heatmaps.
           </p>
         </div>

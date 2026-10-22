@@ -202,6 +202,18 @@ body.championship-admin-navbar .championship-countdown-block:hover {
   margin-bottom: var(--space-6);
 }
 
+body.homepage-edit-mode [data-editable-key] {
+  cursor: pointer;
+  outline: 1px dashed var(--blue-400);
+  outline-offset: 4px;
+}
+
+body.homepage-edit-mode [data-editable-key]:hover,
+body.homepage-edit-mode [data-editable-key]:focus-visible {
+  outline-style: solid;
+  box-shadow: var(--glow-sm);
+}
+
 /* ------------------------------------------------------------------------------
    3. Interactive Challenge Split View (Markdown Briefing + Terminal Console)
    ------------------------------------------------------------------------------ */

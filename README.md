@@ -428,6 +428,7 @@ Follow this guide to provision a fresh Supabase project for CTF Arena:
    - Run `supabase/policies.sql`
    - Run `supabase/views.sql`
    - Run `supabase/seed.sql`
+  - For an existing installation, also run `supabase/migrations/20261023_add_site_content.sql` to enable saved homepage text edits.
 4. **Configure Authentication**: Navigate to **Authentication > URL Configuration**:
    - Set **Site URL** to `http://localhost:3000` (or your production frontend URL).
    - Under **Redirect URLs**, add `http://localhost:3000/**`, `http://127.0.0.1:8000/**`, and production domains.

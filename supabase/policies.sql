@@ -18,6 +18,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
     GRANT USAGE, SELECT ON SEQUENCES TO service_role;
 
 ALTER TABLE public.ctf_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rooms ENABLE ROW LEVEL SECURITY;
@@ -52,6 +53,12 @@ DROP POLICY IF EXISTS "Public can view ctf settings" ON public.ctf_settings;
 CREATE POLICY "Public can view ctf settings"
     ON public.ctf_settings FOR SELECT
     USING (TRUE);
+
+DROP POLICY IF EXISTS "Public can view homepage content" ON public.site_content;
+CREATE POLICY "Public can view homepage content"
+    ON public.site_content FOR SELECT
+    USING (TRUE);
+-- No client write policies: homepage content updates go through require_admin API.
 
 -- ------------------------------------------------------------------------------
 -- 4. teams Policies

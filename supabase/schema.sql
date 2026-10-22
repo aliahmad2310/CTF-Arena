@@ -25,6 +25,14 @@ CREATE TABLE IF NOT EXISTS public.ctf_settings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Public homepage copy is served by FastAPI; only admin API writes it.
+CREATE TABLE IF NOT EXISTS public.site_content (
+    id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    content JSONB NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(content) = 'object'),
+    updated_by UUID,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ------------------------------------------------------------------------------
 -- 2. Teams Table
 -- ------------------------------------------------------------------------------
