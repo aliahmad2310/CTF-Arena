@@ -29,7 +29,7 @@ The Supabase publishable/anon key is intended for browser use. It is not a subst
 2. Configure the backend project:
   - **Root Directory:** `backend` (enable including files outside the root directory only if Vercel asks; this backend does not require root-level application imports).
   - **Framework Preset:** FastAPI if detected; otherwise **Other**. Vercel detects the Python app from `requirements.txt` and `app/main.py`.
-  - Leave the Build Command and Output Directory at their detected/default values; this backend is a Python Function, not a static output.
+  - Leave the Build Command and Output Directory at their detected/default values; this backend is a Python Function, not a static output. Vercel detects the FastAPI app from `api/index.py`; do not add a catch-all rewrite to that handler, because Vercel must preserve the original request path for FastAPI routing.
   - The project uses Python 3.12 via `backend/.python-version` and `backend/vercel.json` excludes tests from the function bundle.
 3. Under **Settings** -> **Environment Variables**, add these values to **Production** (and Preview only if you intend to test preview deployments):
 
