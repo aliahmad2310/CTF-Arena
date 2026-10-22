@@ -13,6 +13,9 @@ let isAdmin = false;
 let refreshInterval = 15;
 let remainingSeconds = 15;
 let countdownTimer = null;
+let serverTimeOffsetMs = 0;
+let observedRefreshSlot = null;
+let displayedCountdownSecond = null;
 let currentPage = 1;
 let totalPages = 1;
 let totalEntries = 0;
@@ -28,20 +31,65 @@ function updateCountdownDisplay() {
 
 function startCountdown() {
   if (countdownTimer) clearInterval(countdownTimer);
-  remainingSeconds = refreshInterval;
-  updateCountdownDisplay();
+  observedRefreshSlot = getRefreshSlot();
+  updateCountdownFromServerClock();
 
-  countdownTimer = setInterval(async () => {
-    if (document.hidden) return;
-    remainingSeconds--;
-    if (remainingSeconds <= 0) {
-      remainingSeconds = refreshInterval;
-      updateCountdownDisplay();
-      await refreshLeaderboard(true);
-    } else {
-      updateCountdownDisplay();
-    }
-  }, 1000);
+  countdownTimer = setInterval(() => {
+    const currentSlot = getRefreshSlot();
+    updateCountdownFromServerClock();
+    if (document.hidden || currentSlot === observedRefreshSlot) return;
+
+    observedRefreshSlot = currentSlot;
+    void refreshAtGlobalBoundary();
+  }, 250);
+}
+
+function getServerNowMs() {
+  return Date.now() + serverTimeOffsetMs;
+}
+
+function getRefreshSlot() {
+  return Math.floor(getServerNowMs() / (refreshInterval * 1000));
+}
+
+function updateCountdownFromServerClock() {
+  const intervalMs = refreshInterval * 1000;
+  const remainder = getServerNowMs() % intervalMs;
+  remainingSeconds = Math.max(1, Math.ceil((intervalMs - remainder) / 1000));
+  if (remainingSeconds !== displayedCountdownSecond) {
+    displayedCountdownSecond = remainingSeconds;
+    updateCountdownDisplay();
+  }
+}
+
+function applyServerSchedule(status, clientReferenceMs = Date.now()) {
+  if (Number.isInteger(status?.leaderboard_refresh_seconds) && status.leaderboard_refresh_seconds >= 1) {
+    refreshInterval = status.leaderboard_refresh_seconds;
+  }
+  const serverTimeMs = Date.parse(status?.server_time || "");
+  if (Number.isFinite(serverTimeMs)) serverTimeOffsetMs = serverTimeMs - clientReferenceMs;
+  observedRefreshSlot = getRefreshSlot();
+  displayedCountdownSecond = null;
+  updateCountdownFromServerClock();
+}
+
+async function synchronizeServerSchedule() {
+  const requestStartedAt = Date.now();
+  const status = await api.get("/ctf/status", undefined, { skipPublicCache: true });
+  const requestCompletedAt = Date.now();
+  const requestMidpoint = requestStartedAt + ((requestCompletedAt - requestStartedAt) / 2);
+  applyServerSchedule(status, requestMidpoint);
+  return status;
+}
+
+async function refreshAtGlobalBoundary() {
+  try {
+    // The API is the source of truth for both interval changes and the UTC clock anchor.
+    await synchronizeServerSchedule();
+  } catch (err) {
+    console.warn("Could not synchronize the leaderboard refresh schedule:", err);
+  }
+  await refreshLeaderboard(true);
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -67,9 +115,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   try {
-    const status = await api.get("/ctf/status");
-    if (status && typeof status.leaderboard_refresh_seconds === "number" && status.leaderboard_refresh_seconds >= 1) {
-      refreshInterval = status.leaderboard_refresh_seconds;
+    const status = await synchronizeServerSchedule();
+    if (status) {
       const input = document.getElementById("admin-refresh-input");
       if (input) input.value = refreshInterval;
     }
@@ -100,9 +147,7 @@ function initAdminRefreshControl() {
     saveBtn.textContent = "Saving...";
     try {
       await api.patch("/admin/settings", { leaderboard_refresh_seconds: newSec });
-      refreshInterval = newSec;
-      remainingSeconds = newSec;
-      updateCountdownDisplay();
+      await synchronizeServerSchedule();
       showToast(`Scoreboard auto-refresh interval updated to ${newSec}s`, "success");
     } catch (err) {
       showToast(err.message || "Failed to update interval", "error");

@@ -74,7 +74,7 @@ function invalidatePublicGetCache() {
  */
 export async function apiFetch(endpoint, options = {}) {
   const url = `${CONFIG.API_BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
-  const { suppressAuthErrors = false, ...requestOptions } = options;
+  const { suppressAuthErrors = false, skipPublicCache = false, ...requestOptions } = options;
   const headers = new Headers(requestOptions.headers || {});
 
   // Retrieve current active session token from Supabase client
@@ -97,7 +97,7 @@ export async function apiFetch(endpoint, options = {}) {
     headers
   };
 
-  const cacheable = isCacheablePublicGet(endpoint, config);
+  const cacheable = !skipPublicCache && isCacheablePublicGet(endpoint, config);
   if (cacheable) {
     const cached = readPublicCache(url);
     if (cached) return cached.value;
