@@ -8,9 +8,5 @@ CREATE TABLE IF NOT EXISTS public.site_content (
 
 ALTER TABLE public.site_content ENABLE ROW LEVEL SECURITY;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.site_content TO service_role;
-
-DROP POLICY IF EXISTS "Public can view homepage content" ON public.site_content;
-CREATE POLICY "Public can view homepage content"
-    ON public.site_content FOR SELECT
-    USING (TRUE);
--- No anon/authenticated write policies. Admin changes are authenticated and enforced by FastAPI.
+-- No anon/authenticated policies are created. The public homepage reads this
+-- through FastAPI; updates require the backend's require_admin dependency.

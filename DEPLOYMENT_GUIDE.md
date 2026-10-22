@@ -71,7 +71,18 @@ The Supabase publishable/anon key is intended for browser use. It is not a subst
 4. For a custom domain, update `ALLOWED_ORIGINS`, Supabase redirect settings, and `frontend/js/config.js` as necessary, then redeploy both projects.
 5. In Supabase **Authentication** -> **Sign In / Providers** -> **Email**, keep the Email provider's password-login capability enabled. Admin-created accounts require a valid email address for Supabase Auth, while users sign in with their username and password. Public signup stays removed. If email/password provider is disabled, `/auth/login` returns a configuration error even when the username and password are correct.
 
-## 5. Verify the deployment
+## 5. Enable Admin Homepage Edit Mode (separate frontend/backend projects)
+
+Homepage copy is stored in Supabase, not in Vercel's frontend filesystem. The static frontend calls the FastAPI backend: `GET /site-content` loads public copy, and `PATCH /admin/site-content` saves edits after the backend verifies the admin JWT and profile role. The Supabase service-role key stays on the backend.
+
+1. **Apply the database setup.** In the Supabase SQL Editor, run the current `supabase/schema.sql` and `supabase/policies.sql` if this is a fresh project. On an existing project, run `supabase/migrations/20261023_add_site_content.sql`. It creates the one-row JSONB store with RLS enabled and no client write policy. Homepage reads and writes must go through FastAPI.
+2. **Deploy the backend project first.** Push the changes and redeploy the separate Vercel project whose Root Directory is `backend`. Confirm `/docs` lists `GET /site-content` and `PATCH /admin/site-content`, then check `GET https://<your-backend-domain>/site-content` returns JSON with a `content` object (initially it may be empty).
+3. **Check backend settings.** Ensure the backend Vercel project's `ALLOWED_ORIGINS` includes the exact frontend origin, such as `https://cyber-jirga-ctf.vercel.app`, with no path or trailing slash. Confirm `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` point to the same Supabase project that received the migration. Never add the service-role key to the frontend project.
+4. **Deploy the frontend project.** Push/redeploy the separate Vercel project whose Root Directory is `frontend`. Verify `frontend/js/config.js` has `API_BASE_URL` set to the backend origin, not the frontend origin, and that `SUPABASE_URL` matches the backend's project. Frontend edits require this frontend redeployment; backend changes alone cannot update static frontend code.
+5. **Use Edit Mode.** Sign in with an account whose `profiles.role` is `admin`, open the homepage, and select **Edit Mode** in the top-right navbar. Click any outlined editable heading, description, or button label, enter new text, and save. Exit Edit Mode to use the homepage normally. The edit button is not rendered for competitors.
+6. **Verify persistence and authorization.** Refresh the homepage: the saved copy should load again. A signed-out `GET /site-content` should succeed; a signed-out or non-admin `PATCH /admin/site-content` must return `401` or `403`. If a read fails, inspect the backend Vercel function logs and confirm the migration ran against the configured Supabase project. If the browser reports CORS, verify the exact frontend origin is in backend `ALLOWED_ORIGINS`, then redeploy the backend.
+
+## 6. Verify the deployment
 
 1. Open the backend `/health`, `/docs`, and `/ctf/status` URLs.
 2. Open the frontend and use browser developer tools to check that API requests target the backend domain, use HTTPS, and do not fail with CORS errors.
