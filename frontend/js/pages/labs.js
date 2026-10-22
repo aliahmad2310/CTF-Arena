@@ -14,7 +14,7 @@ let allLabs = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    await requireAuth();
+    await requireAuth({ redirectTo: "/", revealOnSuccess: true });
   } catch {
     return;
   }

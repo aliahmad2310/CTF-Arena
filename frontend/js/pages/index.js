@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await initLayout();
       document.body.classList.add("championship-admin-navbar");
     }
-    document.documentElement.classList.remove("admin-route-pending");
+    document.documentElement.classList.remove("admin-route-pending", "protected-route-pending");
   }
 
   if (!isAdminRoute) await initLayout();
@@ -78,11 +78,7 @@ let adminRedirectStarted = false;
 async function redirectAdminRouteToHome() {
   if (adminRedirectStarted) return;
   adminRedirectStarted = true;
-  try {
-    await supabase.auth.signOut({ scope: "local" });
-  } finally {
-    window.location.replace("/");
-  }
+  window.location.replace("/");
 }
 
 async function initCtfCountdown() {

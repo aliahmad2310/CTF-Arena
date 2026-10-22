@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   await initLayout();
+  document.documentElement.classList.remove("protected-route-pending", "admin-route-pending");
   document.getElementById("navbar-root")?.classList.add("championship-admin-navbar");
   await loadCountdown();
   bindEditor();

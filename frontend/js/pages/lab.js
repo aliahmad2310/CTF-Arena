@@ -9,7 +9,7 @@ let currentRoomId = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    await requireAuth();
+    await requireAuth({ redirectTo: "/", revealOnSuccess: true });
   } catch {
     return;
   }

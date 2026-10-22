@@ -6,7 +6,7 @@
 
 import { api } from "../api.js";
 import { initLayout } from "../layout.js";
-import { startHeartbeat, getSession } from "../auth.js";
+import { startHeartbeat, getSession, requireAuth } from "../auth.js";
 import { CONFIG } from "../config.js";
 import { escapeHtml } from "../utils.js";
 import { showToast, showModal } from "../ui.js";
@@ -15,6 +15,11 @@ let currentRoomId = null;
 let currentChallengeId = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    await requireAuth({ redirectTo: "/", revealOnSuccess: true });
+  } catch {
+    return;
+  }
   await initLayout();
 
   const params = new URLSearchParams(window.location.search);

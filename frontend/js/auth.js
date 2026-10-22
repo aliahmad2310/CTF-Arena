@@ -52,16 +52,21 @@ export async function getUserProfile(forceRefresh = false, silent = false) {
  * If not authenticated, redirects to /login.html.
  * @returns {Promise<Object>}
  */
-export async function requireAuth() {
+export async function requireAuth({ redirectTo, revealOnSuccess = false } = {}) {
   const session = await getSession();
   if (!session) {
-    const currentPath = window.location.pathname + window.location.search;
-    window.location.href = `/login.html?redirect=${encodeURIComponent(currentPath)}`;
+    if (redirectTo) {
+      window.location.replace(redirectTo);
+    } else {
+      const currentPath = window.location.pathname + window.location.search;
+      window.location.href = `/login.html?redirect=${encodeURIComponent(currentPath)}`;
+    }
     throw new Error("Authentication required");
   }
 
   const profile = await getUserProfile();
   if (!profile) {
+    if (redirectTo) window.location.replace(redirectTo);
     // A valid Supabase session does not guarantee the API is reachable or that
     // the profile request succeeded. Sending the user to login in this case
     // creates a login -> dashboard -> login redirect loop.
@@ -69,6 +74,9 @@ export async function requireAuth() {
     throw new Error("Profile retrieval failed");
   }
 
+  if (revealOnSuccess) {
+    document.documentElement.classList.remove("protected-route-pending");
+  }
   return profile;
 }
 
@@ -78,12 +86,9 @@ export async function requireAuth() {
  * @returns {Promise<Object>}
  */
 export async function requireAdmin() {
-  const profile = await requireAuth();
+  const profile = await requireAuth({ redirectTo: "/" });
   if (profile.role !== "admin") {
-    showToast("Access restricted: Administrator rights required", "error");
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 1200);
+    window.location.replace("/");
     throw new Error("Admin privileges required");
   }
   return profile;
