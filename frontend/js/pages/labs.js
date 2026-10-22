@@ -6,18 +6,23 @@
 
 import { api } from "../api.js";
 import { initLayout } from "../layout.js";
-import { requireAuth } from "../auth.js";
+import { getSession } from "../auth.js";
 import { escapeHtml, debounce } from "../utils.js";
 import { renderStatusBadge } from "../ui.js";
 
 let allLabs = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    await requireAuth({ redirectTo: "/", revealOnSuccess: true });
-  } catch {
+  const session = await getSession();
+  if (!session) {
+    window.location.replace("/");
     return;
   }
+
+  // A valid Supabase session is enough to reveal the page. Profile loading is
+  // supplementary; if the profile API is unavailable, keep the catalog visible
+  // so the page can show its actual data-loading state instead of staying blank.
+  document.documentElement.classList.remove("protected-route-pending");
   await initLayout();
 
   await fetchLabs();
