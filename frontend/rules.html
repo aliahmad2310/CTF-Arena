@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competition Rules - Cyber Jirga CTF</title>
+  <meta name="description" content="Rules and prohibited conduct for Cyber Jirga Hacktoberfest 2026 CTF participants.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/background.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/effects.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body class="site-wrapper">
+  <div id="navbar-root"></div>
+
+  <main class="site-main container" style="max-width: 900px;">
+    <header style="margin-bottom: var(--space-6);">
+      <p class="text-cyan text-mono text-xs" style="margin-bottom: var(--space-2);">CYBER JIRGA HACKTOBERFEST 2026 CTF</p>
+      <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-2);">Competition Rules</h1>
+      <p class="text-dim" style="margin: 0;">All participants must follow these rules throughout the competition. Violations may result in removal from the event and disqualification.</p>
+    </header>
+
+    <section class="card" aria-labelledby="rules-list-heading">
+      <div class="card-header">
+        <h2 id="rules-list-heading" style="font-size: var(--text-xl); margin: 0;">Participant Conduct</h2>
+      </div>
+      <div class="card-body">
+        <ol style="display: grid; gap: var(--space-5); margin: 0; padding-left: 1.5rem;">
+          <li>
+            <h3 style="font-size: var(--text-base); margin: 0 0 var(--space-1);">Flag sharing is prohibited</h3>
+            <p class="text-dim" style="margin: 0;">Do not share, publish, request, or receive flags, partial flag values, or challenge solutions that reveal how to claim points. Participants must solve challenges themselves. Collaboration is permitted only between members of the same team when team play is supported.</p>
+          </li>
+          <li>
+            <h3 style="font-size: var(--text-base); margin: 0 0 var(--space-1);">Attacks and unauthorized activity are strictly prohibited</h3>
+            <p class="text-dim" style="margin: 0;">Do not conduct denial-of-service or distributed denial-of-service (DoS/DDoS) attacks, social engineering, phishing, malware activity, or any other attack against the platform, its infrastructure, participants, or third-party systems. Only interact with targets explicitly provided for a challenge. Do not disrupt services, access data outside the challenge scope, or attempt to access accounts or systems without authorization.</p>
+          </li>
+          <li>
+            <h3 style="font-size: var(--text-base); margin: 0 0 var(--space-1);">Using AI is prohibited</h3>
+            <p class="text-dim" style="margin: 0 0 var(--space-2);">Do not use generative AI tools, chatbots, or AI agents to solve challenges, derive or generate flags, or perform competition tasks on your behalf.</p>
+            <p class="text-main" style="margin: 0;">Participants remain responsible for their actions and must not use AI agents to carry out prohibited attacks or automate unauthorized platform interactions.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <p class="text-dim text-xs" style="margin-top: var(--space-4);">By participating in Cyber Jirga Hacktoberfest 2026 CTF, you agree to follow these rules and respect the competition scope.</p>
+  </main>
+
+  <div id="footer-root"></div>
+  <script type="module">
+    import { initLayout } from "/js/layout.js";
+    await initLayout();
+  </script>
+</body>
+</html>
