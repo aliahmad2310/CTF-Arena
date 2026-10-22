@@ -5,8 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cyber Jirga CTF</title>
   <meta name="description" content="Next-generation Capture The Flag platform modeled after TryHackMe rooms. Attack real-world labs, capture flags, and conquer the live leaderboard.">
-  <script>if (window.location.pathname.startsWith("/admin")) document.documentElement.classList.add("admin-route-pending", "protected-route-pending");</script>
-  <style>html.protected-route-pending body{visibility:hidden}</style>
+  <script>
+    if (window.location.pathname.startsWith("/admin")) {
+      document.documentElement.classList.add("admin-route-pending", "protected-route-pending");
+    } else {
+      document.documentElement.classList.add("homepage-content-pending");
+    }
+  </script>
+  <style>
+    html.protected-route-pending body { visibility: hidden; }
+    html.homepage-content-pending body { visibility: hidden; }
+  </style>
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <link rel="stylesheet" href="/css/variables.css">
   <link rel="stylesheet" href="/css/base.css">

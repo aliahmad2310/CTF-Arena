@@ -35,6 +35,7 @@ const homepageEditableFields = {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const homepageContentPromise = loadHomepageContent();
   const profile = await getUserProfile();
   const canEditChampionship = profile?.role === "admin";
   const enterLabsButton = document.getElementById("enter-labs-btn");
@@ -65,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!isAdminRoute) await initLayout();
 
-  await loadHomepageContent();
+  await homepageContentPromise;
 
   await Promise.all([
     initCtfCountdown(),
@@ -95,6 +96,8 @@ async function loadHomepageContent() {
     });
   } catch (error) {
     console.warn("Could not load saved homepage text; using the built-in copy.", error);
+  } finally {
+    document.documentElement.classList.remove("homepage-content-pending");
   }
 }
 
