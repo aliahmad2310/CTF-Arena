@@ -116,7 +116,7 @@ function renderFooter() {
           <span>&copy; ${year} ${CONFIG.PLATFORM_NAME}. Built for cyber defense training.</span>
         </div>
         <div style="display:flex; gap:1.5rem;">
-          <a href="/labs.html">Labs</a>
+          ${profile ? '<a href="/labs.html">Labs</a>' : ""}
           <a href="/leaderboard.html">Scoreboard</a>
           <a href="/rules.html">Rules</a>
         </div>
