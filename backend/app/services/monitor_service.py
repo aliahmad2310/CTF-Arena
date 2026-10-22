@@ -263,6 +263,8 @@ async def get_team_progress_directory(page: int = 1, page_size: int = 50) -> Adm
     supabase = get_supabase_client()
     offset = (page - 1) * page_size
     standings = supabase.table("team_leaderboard").select("*", count="exact").order("rank").range(offset, offset + page_size - 1).execute()
+    rows = standings.data or []
+    team_ids = [row["team_id"] for row in rows]
     try:
         team_settings = supabase.table("teams").select("id, max_members").in_("id", team_ids).execute() if team_ids else None
     except Exception:

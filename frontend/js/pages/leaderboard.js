@@ -13,7 +13,11 @@ let isAdmin = false;
 let refreshInterval = 15;
 let remainingSeconds = 15;
 let countdownTimer = null;
-const PAGE_SIZE = 100;
+let currentPage = 1;
+let totalPages = 1;
+let totalEntries = 0;
+let refreshRequestId = 0;
+const PAGE_SIZE = 6;
 
 function updateCountdownDisplay() {
   const secEl = document.getElementById("leaderboard-countdown-sec");
@@ -54,6 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   bindTabs();
   bindSearch();
+  bindPagination();
   updateHeader();
   if (isAdmin) {
     const subtitle = document.getElementById("leaderboard-subtitle");
@@ -116,6 +121,7 @@ function bindTabs() {
   document.getElementById("tab-teams").addEventListener("click", async () => {
     if (activeTab === "teams") return;
     activeTab = "teams";
+    currentPage = 1;
     setActiveTab("tab-teams", "tab-users");
     updateHeader();
     await refreshLeaderboard();
@@ -123,6 +129,7 @@ function bindTabs() {
   document.getElementById("tab-users").addEventListener("click", async () => {
     if (activeTab === "users") return;
     activeTab = "users";
+    currentPage = 1;
     setActiveTab("tab-users", "tab-teams");
     updateHeader();
     await refreshLeaderboard();
@@ -142,7 +149,25 @@ function setActiveTab(activeId, inactiveId) {
 
 function bindSearch() {
   const input = document.getElementById("leaderboard-search");
-  input.addEventListener("input", debounce(() => refreshLeaderboard(), 300));
+  input.addEventListener("input", debounce(() => {
+    currentPage = 1;
+    void refreshLeaderboard();
+  }, 300));
+}
+
+function bindPagination() {
+  document.getElementById("leaderboard-prev")?.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage -= 1;
+      void refreshLeaderboard();
+    }
+  });
+  document.getElementById("leaderboard-next")?.addEventListener("click", () => {
+    if (currentPage < totalPages) {
+      currentPage += 1;
+      void refreshLeaderboard();
+    }
+  });
 }
 
 function updateHeader() {
@@ -157,6 +182,7 @@ function updateHeader() {
 }
 
 async function refreshLeaderboard(background = false) {
+  const requestId = ++refreshRequestId;
   if (!background) {
     remainingSeconds = refreshInterval;
     updateCountdownDisplay();
@@ -164,15 +190,20 @@ async function refreshLeaderboard(background = false) {
   const body = document.getElementById("leaderboard-tbody");
   const columns = activeTab === "teams" ? (isAdmin ? 6 : 5) : (isAdmin ? 5 : 4);
   if (!background) body.innerHTML = `<tr><td colspan="${columns}" style="text-align:center;padding:var(--space-6);">Loading standings...</td></tr>`;
+  setPaginationLoading(true);
   const query = document.getElementById("leaderboard-search").value.trim();
   try {
     if (activeTab === "teams") {
-      const response = await api.get("/leaderboard/teams", { page: 1, page_size: PAGE_SIZE, q: query });
+      const response = await api.get("/leaderboard/teams", { page: currentPage, page_size: PAGE_SIZE, q: query });
+      if (requestId !== refreshRequestId) return;
+      if (!updatePagination(response.total, response.entries?.length || 0, "teams")) return;
       if (isAdmin) {
         try {
-          const details = await api.get("/admin/monitor/teams", { page: 1, page_size: PAGE_SIZE });
+          const details = await api.get("/admin/monitor/teams", { page: currentPage, page_size: PAGE_SIZE });
+          if (requestId !== refreshRequestId) return;
           renderAdminTeams(response.entries || [], details.teams || []);
         } catch (error) {
+          if (requestId !== refreshRequestId) return;
           console.warn("Admin team progress is unavailable; displaying scoreboard standings only.", error);
           renderAdminTeams(response.entries || [], []);
         }
@@ -180,12 +211,44 @@ async function refreshLeaderboard(background = false) {
         renderTeams(response.entries || []);
       }
     } else {
-      const response = await api.get("/leaderboard/users", { page: 1, page_size: PAGE_SIZE, q: query });
+      const response = await api.get("/leaderboard/users", { page: currentPage, page_size: PAGE_SIZE, q: query });
+      if (requestId !== refreshRequestId) return;
+      if (!updatePagination(response.total, response.entries?.length || 0, "accounts")) return;
       renderUsers(response.entries || []);
     }
   } catch (error) {
+    if (requestId !== refreshRequestId) return;
     body.innerHTML = `<tr><td colspan="${columns}" style="text-align:center;color:var(--status-red-text);padding:var(--space-6);">${escapeHtml(error.message || "Unable to load leaderboard")}</td></tr>`;
+  } finally {
+    if (requestId === refreshRequestId) setPaginationLoading(false);
   }
+}
+
+function updatePagination(total, visibleCount, itemLabel) {
+  totalEntries = Number.isFinite(Number(total)) ? Number(total) : 0;
+  totalPages = Math.max(1, Math.ceil(totalEntries / PAGE_SIZE));
+  if (currentPage > totalPages) {
+    currentPage = totalPages;
+    void refreshLeaderboard(true);
+    return false;
+  }
+
+  const start = totalEntries === 0 ? 0 : ((currentPage - 1) * PAGE_SIZE) + 1;
+  const end = totalEntries === 0 ? 0 : Math.min(start + visibleCount - 1, totalEntries);
+  const info = document.getElementById("leaderboard-page-info");
+  if (info) info.textContent = `Showing ${start}-${end} of ${totalEntries} ${itemLabel} · Page ${currentPage} of ${totalPages}`;
+  const previous = document.getElementById("leaderboard-prev");
+  const next = document.getElementById("leaderboard-next");
+  if (previous) previous.disabled = currentPage <= 1;
+  if (next) next.disabled = currentPage >= totalPages;
+  return true;
+}
+
+function setPaginationLoading(isLoading) {
+  const previous = document.getElementById("leaderboard-prev");
+  const next = document.getElementById("leaderboard-next");
+  if (previous) previous.disabled = isLoading || currentPage <= 1;
+  if (next) next.disabled = isLoading || currentPage >= totalPages;
 }
 
 function renderTeams(teams) {
