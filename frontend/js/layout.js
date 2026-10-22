@@ -67,7 +67,6 @@ function renderNavbar(profile) {
       <div class="container navbar-inner">
         <a href="/" class="navbar-brand">
           <img src="/assets/cyber-jirga-logo.webp" alt="Cyber Jirga logo" class="brand-logo" width="140" height="40">
-          <span>${CONFIG.PLATFORM_NAME}</span>
         </a>
 
         <ul class="navbar-nav">

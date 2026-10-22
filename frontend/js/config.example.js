@@ -6,7 +6,7 @@
  */
 
 export const CONFIG = {
-  PLATFORM_NAME: "CTF",
+  PLATFORM_NAME: "Cyber Jirga CTF",
   API_BASE_URL: "http://localhost:8000",
   SUPABASE_URL: "https://your-project.supabase.co",
   SUPABASE_ANON_KEY: "your-supabase-anon-key-here",
