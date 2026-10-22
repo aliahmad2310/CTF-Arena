@@ -126,20 +126,28 @@ function bindFlagSubmission(slug, lab) {
 
       if (res.is_correct) {
         showToast(res.message || "Flag accepted! Lab solved.", "success");
-        indicator.className = "badge badge-green font-mono";
-        indicator.textContent = "Captured";
+        indicator.className = `badge ${res.lab_completed ? "badge-green" : "badge-amber"} font-mono`;
+        indicator.textContent = res.lab_completed ? "Lab Completed" : "Flag Captured";
 
-        document.getElementById("lab-status-badge").innerHTML = renderStatusBadge("completed");
-
-        flagInput.disabled = true;
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Lab Completed";
+        if (res.lab_completed) {
+          document.getElementById("lab-status-badge").innerHTML = renderStatusBadge("completed");
+          flagInput.disabled = true;
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Lab Completed";
+        } else {
+          document.getElementById("lab-status-badge").innerHTML = renderStatusBadge("in_progress");
+          flagInput.value = "";
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Submit Next Flag";
+        }
 
         feedback.className = "text-xs font-mono";
         feedback.style.background = "rgba(0, 255, 157, 0.1)";
         feedback.style.color = "var(--accent-green)";
         feedback.style.border = "1px solid var(--accent-green)";
-        feedback.textContent = res.message || "Flag accepted! Lab completed successfully.";
+        feedback.textContent = res.message || (res.lab_completed
+          ? "Flag accepted. All lab challenges are complete."
+          : "Flag accepted and points recorded. Continue with the remaining lab challenges.");
       } else {
         showToast(res.message || "Incorrect flag", "error");
         submitBtn.disabled = false;

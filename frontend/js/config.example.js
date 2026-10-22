@@ -6,7 +6,7 @@
  */
 
 export const CONFIG = {
-  PLATFORM_NAME: "CTF Arena",
+  PLATFORM_NAME: "CTF",
   API_BASE_URL: "http://localhost:8000",
   SUPABASE_URL: "https://your-project.supabase.co",
   SUPABASE_ANON_KEY: "your-supabase-anon-key-here",

@@ -74,6 +74,14 @@
   text-decoration: none;
 }
 
+.brand-logo {
+  width: 140px;
+  height: 40px;
+  object-fit: cover;
+  object-position: center;
+  flex: 0 0 auto;
+}
+
 .navbar-brand:hover {
   text-decoration: none;
 }

@@ -83,11 +83,16 @@ async function synchronizeServerSchedule() {
 }
 
 async function refreshAtGlobalBoundary() {
+  let previousRefreshInterval = refreshInterval;
   try {
     // The API is the source of truth for both interval changes and the UTC clock anchor.
     await synchronizeServerSchedule();
   } catch (err) {
     console.warn("Could not synchronize the leaderboard refresh schedule:", err);
+  }
+  if (previousRefreshInterval !== refreshInterval) {
+    observedRefreshSlot = getRefreshSlot();
+    return;
   }
   await refreshLeaderboard(true);
 }
@@ -107,6 +112,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   bindTabs();
   bindSearch();
   bindPagination();
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) void refreshLeaderboard(true);
+  });
   updateHeader();
   if (isAdmin) {
     const subtitle = document.getElementById("leaderboard-subtitle");
@@ -239,7 +247,7 @@ async function refreshLeaderboard(background = false) {
   const query = document.getElementById("leaderboard-search").value.trim();
   try {
     if (activeTab === "teams") {
-      const response = await api.get("/leaderboard/teams", { page: currentPage, page_size: PAGE_SIZE, q: query });
+      const response = await api.get("/leaderboard/teams", { page: currentPage, page_size: PAGE_SIZE, q: query }, { skipPublicCache: true });
       if (requestId !== refreshRequestId) return;
       if (!updatePagination(response.total, response.entries?.length || 0, "teams")) return;
       if (isAdmin) {
@@ -256,7 +264,7 @@ async function refreshLeaderboard(background = false) {
         renderTeams(response.entries || []);
       }
     } else {
-      const response = await api.get("/leaderboard/users", { page: currentPage, page_size: PAGE_SIZE, q: query });
+      const response = await api.get("/leaderboard/users", { page: currentPage, page_size: PAGE_SIZE, q: query }, { skipPublicCache: true });
       if (requestId !== refreshRequestId) return;
       if (!updatePagination(response.total, response.entries?.length || 0, "accounts")) return;
       renderUsers(response.entries || []);

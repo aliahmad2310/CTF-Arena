@@ -13,7 +13,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.ctf_settings (
     id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-    title TEXT NOT NULL DEFAULT 'CTF Arena',
+    title TEXT NOT NULL DEFAULT 'CTF Championship',
     start_time TIMESTAMPTZ,
     end_time TIMESTAMPTZ,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -255,6 +255,11 @@ CREATE TABLE IF NOT EXISTS public.solves (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_solve_user_challenge UNIQUE (challenge_id, user_id)
 );
+
+-- A team can earn points for a challenge only once, even if multiple members submit it together.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_solve_team_challenge
+    ON public.solves (challenge_id, team_id)
+    WHERE team_id IS NOT NULL;
 
 -- ------------------------------------------------------------------------------
 -- 12. Lab Progress Table (State tracking per user per lab)

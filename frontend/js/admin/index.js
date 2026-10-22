@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function loadCountdown() {
   try {
     ctfConfig = await api.get("/ctf/status");
-    document.getElementById("ctf-title").textContent = ctfConfig.title || "CTF Arena Championship";
+    document.getElementById("ctf-title").textContent = ctfConfig.title || "CTF Championship";
     const target = getTargetDate(ctfConfig);
     const status = document.getElementById("championship-status");
     if (!target) {
@@ -81,7 +81,7 @@ function bindEditor() {
 
   const openEditor = () => {
     if (!ctfConfig) return;
-    document.getElementById("editor-title").value = ctfConfig.title || "CTF Arena Championship";
+    document.getElementById("editor-title").value = ctfConfig.title || "CTF Championship";
     const targetKey = ctfConfig.start_time && new Date(ctfConfig.start_time).getTime() > Date.now() ? "start_time" : "end_time";
     targetSelect.value = targetKey;
     dateInput.value = toLocalInputValue(ctfConfig[targetKey]);

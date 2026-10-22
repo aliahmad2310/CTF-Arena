@@ -76,7 +76,7 @@ async function redirectAdminRouteToHome() {
 async function initCtfCountdown() {
   try {
     const status = await api.get("/ctf/status");
-    document.getElementById("ctf-title").textContent = status.title || "CTF Arena Cyber Championship";
+    document.getElementById("ctf-title").textContent = status.title || "CTF Championship";
     window.ctfChampionshipConfig = status;
 
     const statusBadge = document.getElementById("ctf-status-badge");
@@ -130,7 +130,7 @@ async function initCtfCountdown() {
     console.warn("Could not query CTF status:", err);
   }
   if (!window.ctfChampionshipConfig) {
-    window.ctfChampionshipConfig = { title: "CTF Arena Cyber Championship", start_time: null, end_time: null };
+    window.ctfChampionshipConfig = { title: "CTF Championship", start_time: null, end_time: null };
   }
 }
 
@@ -151,7 +151,7 @@ function bindChampionshipEditor() {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
   const edit = () => {
-    document.getElementById("editor-title").value = config.title || "CTF Arena Cyber Championship";
+    document.getElementById("editor-title").value = config.title || "CTF Championship";
     const target = config.start_time && new Date(config.start_time) > new Date()
       ? new Date(config.start_time)
       : config.end_time ? new Date(config.end_time) : new Date();

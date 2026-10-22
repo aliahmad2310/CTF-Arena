@@ -908,7 +908,7 @@ async def get_admin_settings(
     row = res.data[0] if res.data else {}
     return CtfStatusResponse(
         id=row.get("id", 1),
-        title=row.get("title", "CTF Arena"),
+        title=row.get("title", "CTF Championship"),
         start_time=row.get("start_time"),
         end_time=row.get("end_time"),
         is_active=row.get("is_active", True),

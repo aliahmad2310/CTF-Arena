@@ -20,7 +20,7 @@ INSERT INTO public.ctf_settings (
     leaderboard_refresh_seconds
 ) VALUES (
     1,
-    'CTF Arena Cyber Championship',
+    'CTF Championship',
     NOW() - INTERVAL '1 day',
     NOW() + INTERVAL '7 days',
     TRUE,

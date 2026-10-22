@@ -4,7 +4,7 @@
  */
 
 export const CONFIG = {
-  PLATFORM_NAME: "CTF Arena",
+  PLATFORM_NAME: "CTF",
   API_BASE_URL: "https://ctf-arena-backend.vercel.app",
   SUPABASE_URL: "https://eaqqitgsvvrsvxqtvsle.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_S4i-1fZoF50BuS2kZre4RA_p_a2Zx0L",

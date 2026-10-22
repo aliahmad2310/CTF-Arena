@@ -148,7 +148,7 @@ async def get_ctf_status():
     # Fallback to default configuration if database is unreachable or table not yet initialized
     return CtfStatusResponse(
         id=1,
-        title="CTF Arena",
+        title="CTF Championship",
         start_time=None,
         end_time=None,
         is_active=True,

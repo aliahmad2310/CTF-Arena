@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from uuid import UUID
 from fastapi import HTTPException, status
+from postgrest.exceptions import APIError
 
 from app.db.client import get_supabase_client
 from app.core.security import verify_flag
@@ -166,15 +167,28 @@ async def process_flag_submission(
 
     points_to_award = ch["points"]
 
-    # 9. Insert solve record
-    supabase.table("solves").insert({
-        "challenge_id": challenge_id,
-        "user_id": user_id,
-        "team_id": team_id,
-        "points_awarded": points_to_award,
-        "is_first_blood": is_first_blood,
-        "created_at": now_iso
-    }).execute()
+    # 9. Insert one solve record per user, and at most one per team/challenge.
+    try:
+        supabase.table("solves").insert({
+            "challenge_id": challenge_id,
+            "user_id": user_id,
+            "team_id": team_id,
+            "points_awarded": points_to_award,
+            "is_first_blood": is_first_blood,
+            "created_at": now_iso
+        }).execute()
+    except APIError as exc:
+        # The unique constraints are the final guard against simultaneous submissions.
+        error_code = getattr(exc, "code", None)
+        if error_code != "23505":
+            raise
+        return FlagSubmitResponse(
+            is_correct=True,
+            message="Your user or team has already received points for this challenge.",
+            points_awarded=0,
+            is_first_blood=False,
+            lab_completed=False,
+        )
 
     # 10. Log flag_solved activity event
     supabase.table("activity_events").insert({
