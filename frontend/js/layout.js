@@ -118,7 +118,7 @@ function renderFooter() {
         <div style="display:flex; gap:1.5rem;">
           <a href="/labs.html">Labs</a>
           <a href="/leaderboard.html">Scoreboard</a>
-          <a href="/index.html">Rules</a>
+          <a href="/index.html#rules">Rules</a>
         </div>
       </div>
     </footer>
