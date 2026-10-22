@@ -22,10 +22,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const enterLabsButton = document.getElementById("enter-labs-btn");
   const scoreboardButton = document.getElementById("scoreboard-cta-btn");
   if (enterLabsButton) {
-    const labsPath = canEditChampionship ? "/admin/labs.html" : "/labs.html";
-    enterLabsButton.href = profile
-      ? labsPath
-      : `/login.html?redirect=${encodeURIComponent(labsPath)}`;
+    if (profile) {
+      enterLabsButton.href = canEditChampionship ? "/admin/labs.html" : "/labs.html";
+      enterLabsButton.classList.remove("hidden");
+    } else {
+      enterLabsButton.classList.add("hidden");
+    }
   }
   if (scoreboardButton) {
     scoreboardButton.className = `btn btn-lg ${profile ? "btn-secondary" : "btn-primary"}`;
