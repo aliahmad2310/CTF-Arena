@@ -91,6 +91,7 @@ export async function requireAdmin() {
     window.location.replace("/");
     throw new Error("Admin privileges required");
   }
+  document.documentElement.classList.remove("protected-route-pending", "admin-route-pending");
   return profile;
 }
 
