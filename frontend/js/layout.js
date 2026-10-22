@@ -70,7 +70,7 @@ function renderNavbar(profile) {
         </a>
 
         <ul class="navbar-nav">
-          <li><a href="${isAdmin ? "/admin/labs.html" : "/labs.html"}" class="nav-link ${currentPath.includes("/labs.html") || currentPath.includes("/lab.html") ? "active" : ""}">Labs</a></li>
+          ${isAuth ? `<li><a href="${isAdmin ? "/admin/labs.html" : "/labs.html"}" class="nav-link ${currentPath.includes("/labs.html") || currentPath.includes("/lab.html") ? "active" : ""}">Labs</a></li>` : ""}
           <li><a href="/leaderboard.html" class="nav-link ${currentPath.includes("/leaderboard.html") ? "active" : ""}">Leaderboard</a></li>
           ${isAdmin ? `<li><a href="/admin/users.html" class="nav-link ${currentPath.includes("/admin/users.html") || currentPath.includes("/admin/teams.html") ? "active" : ""}">Accounts</a></li>` : ""}
           ${isAuth && !isAdmin ? `

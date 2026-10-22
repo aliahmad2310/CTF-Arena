@@ -1,13 +1,18 @@
 import { CONFIG } from "../config.js";
 import { api } from "../api.js";
 import { initLayout } from "../layout.js";
-import { startHeartbeat } from "../auth.js";
+import { requireAuth, startHeartbeat } from "../auth.js";
 import { escapeHtml } from "../utils.js";
 import { renderStatusBadge, showToast } from "../ui.js";
 
 let currentRoomId = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    await requireAuth();
+  } catch {
+    return;
+  }
   await initLayout();
 
   const params = new URLSearchParams(window.location.search);

@@ -19,6 +19,17 @@ let isAdminRoute = false;
 document.addEventListener("DOMContentLoaded", async () => {
   const profile = await getUserProfile();
   const canEditChampionship = profile?.role === "admin";
+  const enterLabsButton = document.getElementById("enter-labs-btn");
+  const scoreboardButton = document.getElementById("scoreboard-cta-btn");
+  if (enterLabsButton) {
+    const labsPath = canEditChampionship ? "/admin/labs.html" : "/labs.html";
+    enterLabsButton.href = profile
+      ? labsPath
+      : `/login.html?redirect=${encodeURIComponent(labsPath)}`;
+  }
+  if (scoreboardButton) {
+    scoreboardButton.className = `btn btn-lg ${profile ? "btn-secondary" : "btn-primary"}`;
+  }
   isAdminRoute = window.location.pathname.startsWith("/admin");
   if (isAdminRoute && !canEditChampionship) {
     await redirectAdminRouteToHome();
@@ -40,7 +51,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   ]);
 
   if (canEditChampionship) {
-    document.getElementById("enter-labs-btn")?.setAttribute("href", "/admin/labs.html");
     try {
       await requireAdmin();
       bindChampionshipEditor();

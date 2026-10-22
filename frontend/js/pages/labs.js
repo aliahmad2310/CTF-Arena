@@ -6,12 +6,18 @@
 
 import { api } from "../api.js";
 import { initLayout } from "../layout.js";
+import { requireAuth } from "../auth.js";
 import { escapeHtml, debounce } from "../utils.js";
 import { renderStatusBadge } from "../ui.js";
 
 let allLabs = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    await requireAuth();
+  } catch {
+    return;
+  }
   await initLayout();
 
   await fetchLabs();
