@@ -5,7 +5,7 @@
 
 export const CONFIG = {
   PLATFORM_NAME: "Cyber Jirga CTF",
-  API_BASE_URL: "https://ctf-arena-backend.vercel.app",
+  API_BASE_URL: "https://cyber-jirga-ctf-backend.onrender.com",
   SUPABASE_URL: "https://eaqqitgsvvrsvxqtvsle.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_S4i-1fZoF50BuS2kZre4RA_p_a2Zx0L",
   HEARTBEAT_INTERVAL_MS: 60000,
