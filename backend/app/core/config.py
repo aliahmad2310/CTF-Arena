@@ -33,6 +33,8 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "https://ctf-arena-frontend.vercel.app",
         "https://ctf-arena-frontend-git-main.vercel.app",
+        "https://pakistanhackerscommunity.com",
+        "https://www.pakistanhackerscommunity.com",
     ]
 
     # Security & Game Engine Rules
@@ -48,6 +50,8 @@ class Settings(BaseSettings):
         required = {
             "https://ctf-arena-frontend.vercel.app",
             "https://ctf-arena-frontend-git-main.vercel.app",
+            "https://pakistanhackerscommunity.com",
+            "https://www.pakistanhackerscommunity.com",
         }
         return list(dict.fromkeys([*origins, *required]))
 
